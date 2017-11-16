@@ -13,7 +13,7 @@ These build instructions are based on Ubuntu 16.04.
 2. Unzip the latest CodeDx installation files into a folder named `codedx/`. 
 3. Edit `codedx/codedx.props` to contain the MariaDB credentials that will be specified in the run instructions below.
 4. As root run the build script: `sudo ./build.sh`
-5. An image should be available in your docker installation as well as saved to disk in the `target/` folder with the name of `codedx`. To verify the image exists, run `sudo docker images`. To load the image into other docker instances, or after removing the image, use the command: `sudo docker image load --input target\codedx.tar`
+5. An image should be available in your docker installation as well as saved to disk in the `target/` folder with the name of `codedx`. To verify the image exists, run `sudo docker images`. To load the image into other docker instances, or after removing the image, use the command: `sudo docker image load --input target/codedx.tar`
 
 ### Run instructions
 These run instructions are based on Ubuntu 16.04.
