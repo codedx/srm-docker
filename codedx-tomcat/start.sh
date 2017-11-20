@@ -42,4 +42,28 @@ then
 	mv templates/codedx.props /opt/codedx/codedx.props
 fi
 cp templates/logback.xml.base /opt/codedx/logback.xml
+
+if [ ! -e /usr/local/tomcat/webapps/codedx ]
+then
+	echo "Installing codedx..."
+	mkdir /usr/local/tomcat/webapps/codedx
+	cd /usr/local/tomcat/webapps/codedx
+	unzip ../codedx.war
+	cd ../
+
+	#if the user hasn't specified a root codedx user, default to root
+	if [ -z "$SUPERUSER_NAME" ]
+	then
+		SUPERUSER_NAME="root"
+	fi
+
+	#if the user hasn't specified a root codedx password, default to root	
+	if [ -z "$SUPERUSER_PASSWORD" ]
+	then
+		SUPERUSER_PASSWORD="root"
+	fi
+	java -cp /usr/local/tomcat/webapps/codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/codedx/WEB-INF/classes/ com.avi.codedx.installer.Install appdata=$CODEDX_APPDATA superuser-name=$SUPERUSER_NAME superuser-pass=$SUPERUSER_PASSWORD
+	echo $?
+fi
+cd /usr/local/tomcat/bin
 ./catalina.sh run
