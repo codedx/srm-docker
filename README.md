@@ -6,15 +6,15 @@ This repository contains the scripts necessary to create docker images that comp
 1. Install **[docker-compose](https://docs.docker.com/compose/install/)**.
 2. If desired, edit the following values in the `docker-compose.yml` file.
 - The following configuration values affect the database container:
--- MYSQL_ROOT_PASSWORD: The password for MYSQL's root user.
--- MYSQL_DATABASE: The name of the database to be created automatically when the container is started.
+  - MYSQL_ROOT_PASSWORD: The password for MYSQL's root user.
+  - MYSQL_DATABASE: The name of the database to be created automatically when the container is started.
 - The following configuration values affect the Tomcat based Code Dx container:
--- DB_URL: The url that Code Dx uses to connect to it's database.
--- DB_DRIVER: The jdbc database driver that Code Dx uses.
--- DB_USER: The database user Code Dx connects with.
--- DB_PASSWORD: The password Code Dx connects with.
--- SUPERUSER_NAME: The root administrator name for Code Dx.
--- SUPERUSER_PASSWORD: The password for the Code Dx root administrator.
+  - DB_URL: The url that Code Dx uses to connect to it's database.
+  - DB_DRIVER: The jdbc database driver that Code Dx uses.
+  - DB_USER: The database user Code Dx connects with.
+  - DB_PASSWORD: The password Code Dx connects with.
+  - SUPERUSER_NAME: The root administrator name for Code Dx.
+  - SUPERUSER_PASSWORD: The password for the Code Dx root administrator.
 3. Run `docker-compose up`. Alternatively, run `docker-compose up -d` to detatch and run in the background.
 4. To stop, run `docker-compose stop`, and to remove the docker containers automatically created, run `docker-compose down`.
 
