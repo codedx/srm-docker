@@ -54,13 +54,13 @@ then
 	#if the user hasn't specified a root codedx user, default to root
 	if [ -z "$SUPERUSER_NAME" ]
 	then
-		SUPERUSER_NAME="root"
+		SUPERUSER_NAME="admin"
 	fi
 
 	#if the user hasn't specified a root codedx password, default to root	
 	if [ -z "$SUPERUSER_PASSWORD" ]
 	then
-		SUPERUSER_PASSWORD="root"
+		SUPERUSER_PASSWORD="secret"
 	fi
 	java -cp /usr/local/tomcat/webapps/codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/codedx/WEB-INF/classes/ com.avi.codedx.installer.Install appdata=$CODEDX_APPDATA superuser-name=$SUPERUSER_NAME superuser-pass=$SUPERUSER_PASSWORD
 	echo $?

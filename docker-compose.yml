@@ -14,8 +14,8 @@ services:
             - DB_DRIVER=com.mysql.jdbc.Driver
             - DB_USER=root
             - DB_PASSWORD=root
-            - SUPERUSER_NAME=superman
-            - SUPERUSER_PASSWORD=kryptonite
+            - SUPERUSER_NAME=admin
+            - SUPERUSER_PASSWORD=secret
         volumes:
             - codedx-appdata:/opt/codedx
         ports:

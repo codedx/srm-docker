@@ -4,7 +4,7 @@ USER root
 RUN mkdir /opt/codedx
 ENV CODEDX_APPDATA=/opt/codedx
 WORKDIR /usr/local/tomcat/webapps
-COPY codedx/codedx.war .
+COPY codedx.war .
 RUN mkdir /usr/local/tomcat/bin/templates
 WORKDIR /usr/local/tomcat/bin/templates
 COPY templates/codedx.props.base .

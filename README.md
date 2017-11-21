@@ -5,7 +5,7 @@ A docker based installation of Code Dx contains 2 parts: the database image, bas
 
 There are two sections in this README: Quick Installation and Manual Installation. Quick installation uses `docker-compse` to stand up a functional instance of Code Dx automatically, building the Tomcat/Code Dx image automatically if required and starting a properly configured MariaDB container. Manual Installation details instructions for manually building the Tomcat/Code Dx image, creating and starting a container from that image, and starting a MariaDB container with the proper arguments.
 
-All of the following instructions expect `codedx.war`, obtainable from a distribution of Code Dx, to be placed in the following directory (relative to the root of the repository): `codedx-docker/codedx-tomcat/codedx/`.
+All of the following instructions expect `codedx.war`, obtainable from a distribution of Code Dx, to be placed in the following directory (relative to the root of the repository): `codedx-docker/codedx-tomcat/`.
 
 ## Quick Installation
 
@@ -26,8 +26,10 @@ This section details how to start up a functional instance of Code Dx using dock
   - DB_PASSWORD: The password Code Dx connects with.
   - SUPERUSER_NAME: The root administrator name for Code Dx.
   - SUPERUSER_PASSWORD: The password for the Code Dx root administrator.
-4. Run `docker-compose up`. Alternatively, run `docker-compose up -d` to detatch and run in the background.
-5. To stop, run `docker-compose stop`, and to remove the docker containers automatically created, run `docker-compose down`.
+  - ports: The list of values underneath this header controls the ports forwarded from the docker instance to the host machine. The left value represents the port bound on the host machine, the right value represents the port bound in the docker container. If there is a port conflict on the host machine, alter the left value.
+4. Run `docker-compose up`. Alternatively, run `docker-compose up -d` to detach and run in the background.
+5. When the message "The Server is now ready!" appears in the console, navigate to http://localhost:8080/codedx to log into your newly spun up Code Dx instance.
+6. To stop, run `docker-compose stop`, and to remove the docker containers automatically created, run `docker-compose down`.
 
 ## Manual Installation
 
@@ -37,7 +39,7 @@ This sections contains instructions for manually building and running a docker b
 ### Build Instructions
 These build instructions detail how to build the Tomcat/Code Dx docker image.
 1. Install docker using **[these instructions](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-docker-ce-1)**.
-2. Unzip the latest `codedx.war` file from a Code Dx distribution into the following folder (relative to the root of the repository): `codedx-docker/codedx-tomcat/codedx/`. 
+2. Unzip the latest `codedx.war` file from a Code Dx distribution into the following folder (relative to the root of the repository): `codedx-docker/codedx-tomcat/`. 
 3. As root run the build script: `sudo ./build.sh`
 4. An image should be available in your docker installation as well as saved to disk in the `codedx-docker/codedx-tomcat/target/` folder with the name of `codedx.tar`. To verify the image exists in your local docker installation, run `sudo docker images`. To load the image into other docker instances, or after removing the image, use the command: `sudo docker image load --input target/codedx.tar`
 
