@@ -35,14 +35,14 @@ This section details how to start up a functional instance of Code Dx using dock
 This sections contains instructions for manually building and running a docker based installation of Code Dx, useful for development and debugging. The Tomcat/Code Dx image is based on the **[Tomcat](https://hub.docker.com/_/tomcat/)** image hosted on **[Docker Hub](https://hub.docker.com/)**. This section also details the use of **[MariaDB](https://hub.docker.com/_/mariadb/)** in such an installation.
 
 ### Build Instructions
-These build instructions are based on Ubuntu 16.04. They detail how to build the Tomcat/Code Dx docker image.
+These build instructions detail how to build the Tomcat/Code Dx docker image.
 1. Install docker using **[these instructions](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-docker-ce-1)**.
 2. Unzip the latest `codedx.war` file from a Code Dx distribution into the following folder (relative to the root of the repository): `codedx-docker/codedx-tomcat/codedx/`. 
 3. As root run the build script: `sudo ./build.sh`
 4. An image should be available in your docker installation as well as saved to disk in the `codedx-docker/codedx-tomcat/target/` folder with the name of `codedx.tar`. To verify the image exists in your local docker installation, run `sudo docker images`. To load the image into other docker instances, or after removing the image, use the command: `sudo docker image load --input target/codedx.tar`
 
 ### Run Instructions
-These run instructions are based on Ubuntu 16.04. They detail how to manually start up a MariaDB container and Tomcat/Code Dx container built from the above instructions. It is expected that docker is already installed.
+These run instructions detail how to manually start up a MariaDB container and Tomcat/Code Dx container built from the above instructions. It is expected that docker is already installed.
 1. Create a docker network for codedx: `sudo docker network create --driver bridge testnet`
 2. Pull the MariaDB docker image into your docker installation: `sudo docker pull mariadb`
 3. Create and run a MariaDB container with a root password and a volume, and attach it to the network created above: `docker run --name codedx-db --network testnet -v codedx-db-files:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=codedx -d mariadb`. It is important that the database is running before attempting to create and run a Code Dx/Tomcat container.
