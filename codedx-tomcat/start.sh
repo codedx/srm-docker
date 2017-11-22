@@ -36,13 +36,22 @@ edit_config () {
 	sed -i "s|swa.db.password =|$SEDDBPASS|" templates/codedx.props
 }
 
-if [ ! -f /opt/codedx.props ]
+# Check license file for contents
+if [ ! -s /opt/codedx/license.lic ]
+then
+	# Remove empty license file
+	rm /opt/codedx/license.lic
+fi
+
+# Set up configuration file if none is found
+if [ ! -f /opt/codedx/codedx.props ]
 then
 	edit_config
 	mv templates/codedx.props /opt/codedx/codedx.props
 fi
 cp templates/logback.xml.base /opt/codedx/logback.xml
 
+# Determine whether to install or upgrade code dx
 if [ ! -e /opt/codedx/log-files ]
 then
 	echo "Uzipping war for codedx install..."
@@ -75,5 +84,7 @@ else
 	java -cp /usr/local/tomcat/webapps/updated-codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/updated-codedx/WEB-INF/classes/ com.avi.codedx.installer.Update appdata=$CODEDX_APPDATA
 	rm -rf /usr/local/tomcat/webapps/updated-codedx
 fi
+
+# Start tomcat
 cd /usr/local/tomcat/bin
 ./catalina.sh run

@@ -3,6 +3,8 @@ FROM tomcat
 USER root
 RUN mkdir /opt/codedx
 ENV CODEDX_APPDATA=/opt/codedx
+WORKDIR /opt/codedx
+COPY license.lic .
 WORKDIR /usr/local/tomcat/webapps
 RUN rm -rf *
 COPY codedx.war .

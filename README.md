@@ -7,6 +7,9 @@ There are two sections in this README: Quick Installation and Manual Installatio
 
 All of the following instructions expect `codedx.war`, obtainable from a distribution of Code Dx, to be placed in the following directory (relative to the root of the repository): `codedx-docker/codedx-tomcat/`.
 
+## Providing the Docker Image with a Code Dx License
+In order to automatically provide the Tomcat/Code Dx docker image with a valid Code Dx license, paste a valid license string into `codedx-docker/codedx-tomcat/license.lic`, and build the image using the instructions in the following sections. Tomcat/Code Dx containers created from this image will automatically use the license. If the license file is left empty, Code Dx will use an evaluation license.
+
 ## Quick Installation
 
 ### Overview
@@ -53,7 +56,7 @@ These build instructions detail how to build the Tomcat/Code Dx docker image.
 These run instructions detail how to manually start up a MariaDB container and Tomcat/Code Dx container built from the above instructions. It is expected that docker is already installed.
 1. Create a docker network for codedx: `sudo docker network create --driver bridge testnet`
 2. Pull the MariaDB docker image into your docker installation: `sudo docker pull mariadb`
-3. Create and run a MariaDB container with a root password and a volume, and attach it to the network created above: `docker run --name codedx-db --network testnet -v codedx-db-files:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=codedx -d mariadb --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0`. It is important that the database is running before attempting to create and run a Code Dx/Tomcat container.
+3. Create and run a MariaDB container with a root password and a volume, and attach it to the network created above: `docker run --name codedx-db --network testnet -v codedx-db-files:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=codedx -d mariadb --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0`. It is important that the database is running before attempting to create and run a Code Dx/Tomcat container. Verify the database is created and started properly with the following command: `sudo docker logs codedx-db`.
 4. As root, run the first-run-codedx script: `sudo ./first-run-codedx.sh`. Alternatively, run the following command: `docker run --detach -v codedx-appdata:/opt/codedx --name codedx --network testnet --publish 8080:8080 codedx`. This starts the container, creates a volume named `codedx-appdata` where user data will be stored, and opens port 8080 to the container.
 5. To confirm that the Tomcat server hosting codedx started successfully, use the following command: `sudo docker logs codedx | tail`
 6. Navigate to http://localhost:8080/codedx, and you should be greeted with the login page.
