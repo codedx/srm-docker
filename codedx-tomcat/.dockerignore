@@ -1,3 +1,4 @@
 target/
 codedx/documents/
 codedx/licenses/
+codedx/templates/server.xml

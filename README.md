@@ -78,3 +78,56 @@ To update the MariaDB container:
 4. Pull the latest MariaDB image from docker hub: `docker pull mariadb`.
 5. Create and run a MariaDB container as described in step 3 of the Run Instructions: `docker run --name codedx-db --network testnet -v codedx-db-files:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=codedx -d mariadb --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0`
 6. Start the Tomcat/Code Dx container that was stopped in step 1: `sudo docker start codedx`.
+
+## HTTP Over SSL
+
+This Tomcat container can support HTTP over SSL. For example, generate a self-signed certificate with `openssl` (or better yet, obtain a real certificate from a certificate authority):
+
+```bash
+openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj \
+    "/C=US/ST=Colorado/L=Boulder/O=Unidata/CN=tomcat.example.com" -keyout \
+    ./ssl.key -out ./ssl.crt
+```
+
+The `server.xml` file available in `codedx-docker/codedx-tomcat/templates/` contains a configuration that supports SSL using **[Tomcat's SSL capability](https://tomcat.apache.org/tomcat-8.0-doc/ssl-howto.html)**.
+
+This template can be mounted over the existing `server.xml` in the docker image. The SSL certificate and private key must also be mounted.
+
+If manually building and running the Tomcat/Code Dx image, the command used in step 4 of the Run Instructions above will be as follows:
+
+```bash
+docker run --detach \
+	-v codedx-appdata:/opt/codedx \
+	-v /path/to/server.xml:/usr/local/tomcat/conf/server.xml \
+	-v /path/to/ssl.crt:/usr/local/tomcat/conf/ssl.crt \
+	-v /path/to/ssl.key:/usr/local/tomcat/conf/ssl.key \
+	--name codedx \
+	--network testnet \
+	--publish 8443:8443 \
+	codedx
+```
+
+or if using `docker-compose`, the `docker-compose.yml` codedx-tomcat section will look like:
+
+```yaml
+    codedx-tomcat:
+        build: ./codedx-tomcat/
+        environment:
+            - DB_URL=jdbc:mysql://codedx-db/codedx
+            - DB_DRIVER=com.mysql.jdbc.Driver
+            - DB_USER=root
+            - DB_PASSWORD=root
+            - SUPERUSER_NAME=admin
+            - SUPERUSER_PASSWORD=secret
+        volumes:
+            - codedx-appdata:/opt/codedx
+            - /path/to/ssl.crt:/usr/local/tomcat/conf/ssl.crt
+            - /path/to/ssl.key:/usr/local/tomcat/conf/ssl.key
+            - /path/to/server.xml:/usr/local/tomcat/conf/server.xml
+        ports:
+            - 8443:8443
+        depends_on:
+            - codedx-db
+```
+
+After following following the rest of each method's respective setup instructions, Code Dx should now be available over https at the following url: https://localhost:8443/codedx
