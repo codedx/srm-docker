@@ -4,6 +4,7 @@ USER root
 RUN mkdir /opt/codedx
 ENV CODEDX_APPDATA=/opt/codedx
 WORKDIR /usr/local/tomcat/webapps
+RUN rm -rf *
 COPY codedx.war .
 WORKDIR /usr/local/tomcat/conf
 COPY context.xml .

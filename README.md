@@ -31,6 +31,12 @@ This section details how to start up a functional instance of Code Dx using dock
 5. When the message "The Server is now ready!" appears in the console, navigate to http://localhost:8080/codedx to log into your newly spun up Code Dx instance.
 6. To stop, run `docker-compose stop`, and to remove the docker containers automatically created, run `docker-compose down`.
 
+### Quick Updating
+To update the docker container's version of Code Dx:
+1. Copy the newer `codedx.war` file over `codedx-docker/codedx-tomcat/codedx.war`.
+2. Run `docker-compose stop` and then `docker-compose down`. Your data will be preserved in volumes as defined in the docker-compose.yml.
+3. Run `docker-compose up --build` to build and run the updated containers.
+
 ## Manual Installation
 
 ### Overview
@@ -50,4 +56,22 @@ These run instructions detail how to manually start up a MariaDB container and T
 3. Create and run a MariaDB container with a root password and a volume, and attach it to the network created above: `docker run --name codedx-db --network testnet -v codedx-db-files:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=codedx -d mariadb --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0`. It is important that the database is running before attempting to create and run a Code Dx/Tomcat container.
 4. As root, run the first-run-codedx script: `sudo ./first-run-codedx.sh`. Alternatively, run the following command: `docker run --detach -v codedx-appdata:/opt/codedx --name codedx --network testnet --publish 8080:8080 codedx`. This starts the container, creates a volume named `codedx-appdata` where user data will be stored, and opens port 8080 to the container.
 5. To confirm that the Tomcat server hosting codedx started successfully, use the following command: `sudo docker logs codedx | tail`
-6. Navigate to http://localhost:8080/codedx, and you should be greeted with the install page.
+6. Navigate to http://localhost:8080/codedx, and you should be greeted with the login page.
+
+### Manual Updating
+To update the Tomcat/Code Dx container:
+1. Copy the newer `codedx.war` file over `codedx-docker/codedx-tomcat/codedx.war`.
+2. Stop any current running instances of Tomcat/Code Dx with `sudo docker stop codedx`.
+3. Remove the outdated Tomcat/Code Dx container with `sudo docker rm codedx`.
+4. Remove the outdated Tomcat/Code Dx image with `sudo docker rmi codedx`. This is optional, building the updated image will simply rename the old image to something else, and give the new updated image the `codedx` label.
+5. Build the updated image: `sudo ./build.sh`.
+6. Run the first-run-codedx script as showin in step 4 of the Run Instructions: `sudo ./first-run-codedx.sh`.
+7. Navigate to http://localhost:8080/codedx, and you will be greeted with the login page of an updated Code Dx installation.
+
+To update the MariaDB container:
+1. Stop any current running instances of Tomcat/Code Dx with `sudo docker stop codedx`.
+2. Stop any current running instances of MariaDB with `sudo docker stop codedx-db`.
+3. Remove the outdated MariaDB container with `sudo docker rm codedx-db`.
+4. Pull the latest MariaDB image from docker hub: `docker pull mariadb`.
+5. Create and run a MariaDB container as described in step 3 of the Run Instructions: `docker run --name codedx-db --network testnet -v codedx-db-files:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=codedx -d mariadb --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0`
+6. Start the Tomcat/Code Dx container that was stopped in step 1: `sudo docker start codedx`.

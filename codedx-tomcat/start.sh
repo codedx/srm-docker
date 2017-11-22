@@ -43,7 +43,7 @@ then
 fi
 cp templates/logback.xml.base /opt/codedx/logback.xml
 
-if [ ! -e /usr/local/tomcat/webapps/codedx ]
+if [ ! -e /opt/codedx/log-files ]
 then
 	echo "Uzipping war for codedx install..."
 	mkdir /usr/local/tomcat/webapps/codedx
