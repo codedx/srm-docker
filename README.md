@@ -3,7 +3,7 @@
 This repository contains the scripts necessary to create docker images (and from these images, docker containers) that comprise a fully functional [Code Dx](https://www.codedx.com) installation.
 A docker based installation of Code Dx contains 2 parts: the database image, based off of MariaDB, and the Tomcat image that hosts the Code Dx web application. The Tomcat docker container will be networked with the MariaDB container to allow Code Dx to store data.
 
-There are two sections in this README: Quick Installation and Manual Installation. Quick installation uses `docker-compse` to stand up a functional instance of Code Dx automatically, building the Tomcat/Code Dx image automatically if required and starting a properly configured MariaDB container. Manual Installation details instructions for manually building the Tomcat/Code Dx image, creating and starting a container from that image, and starting a MariaDB container with the proper arguments.
+There are two sections in this README: Quick Installation and Manual Installation. Quick installation uses `docker-compose` to stand up a functional instance of Code Dx automatically, building the Tomcat/Code Dx image automatically if required and starting a properly configured MariaDB container. Manual Installation details instructions for manually building the Tomcat/Code Dx image, creating and starting a container from that image, and starting a MariaDB container with the proper arguments.
 
 All of the following instructions expect `codedx.war`, obtainable from a distribution of Code Dx, to be placed in the following directory (relative to the root of the repository): `codedx-docker/codedx-tomcat/`.
 
