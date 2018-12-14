@@ -5,7 +5,9 @@ A docker based installation of Code Dx contains 2 parts: the database image, bas
 
 There are two sections in this README: Quick Installation and Manual Installation. Quick installation uses `docker-compose` to stand up a functional instance of Code Dx automatically, building the Tomcat/Code Dx image automatically if required and starting a properly configured MariaDB container. Manual Installation details instructions for manually building the Tomcat/Code Dx image, creating and starting a container from that image, and starting a MariaDB container with the proper arguments.
 
-All of the following instructions expect `codedx.war`, obtainable from a distribution of Code Dx, to be placed in the following directory (relative to the root of the repository): `codedx-docker/codedx-tomcat/`.
+## Providing the Docker Image with a Code Dx Web Archive
+
+Distributions of Code Dx include a web archive file named `codedx.war`. To use a specific Code Dx version, place its `codedx.war` file in the `codedx-docker/codedx-tomcat/` folder. Otherwise, an attempt to fetch the latest version of `codedx.war` will occur when the Tomcat/Code Dx image builds.
 
 ## Providing the Docker Image with a Code Dx License
 In order to automatically provide the Tomcat/Code Dx docker image with a valid Code Dx license, paste a valid license string into `codedx-docker/codedx-tomcat/license.lic`, and build the image using the instructions in the following sections. Tomcat/Code Dx containers created from this image will automatically use the license. If the license file is left empty, Code Dx will use an evaluation license.
@@ -48,8 +50,8 @@ This sections contains instructions for manually building and running a docker b
 ### Build Instructions
 These build instructions detail how to build the Tomcat/Code Dx docker image.
 1. Install docker using **[these instructions](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-docker-ce-1)**.
-2. Unzip the latest `codedx.war` file from a Code Dx distribution into the following folder (relative to the root of the repository): `codedx-docker/codedx-tomcat/`. 
-3. Change the working directory to `codedx-docker/codedx-tomact/`, and then as root run the build script: `sudo ./build.sh`
+2. Either skip this step to use the latest `codedx.war` file or unzip the `codedx.war` file from a specific Code Dx distribution into the following folder (relative to the root of the repository): `codedx-docker/codedx-tomcat/`. 
+3. Change the working directory to `codedx-docker/codedx-tomcat/`, and then as root run the build script: `sudo ./build.sh`
 4. An image should be available in your docker installation as well as saved to disk in the `codedx-docker/codedx-tomcat/target/` folder with the name of `codedx.tar`. To verify the image exists in your local docker installation, run `sudo docker images`. To load the image into other docker instances, or after removing the image, use the command: `sudo docker image load --input target/codedx.tar`
 
 ### Run Instructions

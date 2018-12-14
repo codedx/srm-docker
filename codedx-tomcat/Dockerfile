@@ -21,6 +21,17 @@ COPY license.lic .
 WORKDIR /usr/local/tomcat/webapps
 RUN rm -rf *
 COPY codedx.war .
+RUN if test ! -s codedx.war; then \
+  CODEDX_PACKAGE=codedx.war && \
+  CODEDX_LATEST_ARCHIVE=codedx-latest.zip && \
+  CODEDX_INSTALLERS_URL=https://codedx.com/installers && \
+  CODEDX_LATEST_ARCHIVE_URL=$CODEDX_INSTALLERS_URL/$CODEDX_LATEST_ARCHIVE && \
+  echo "Downloading latest $CODEDX_PACKAGE from $CODEDX_LATEST_ARCHIVE_URL..." && \
+  wget -nv $CODEDX_LATEST_ARCHIVE_URL && \
+  echo "Extracting $CODEDX_PACKAGE from $CODEDX_LATEST_ARCHIVE..." && \
+  unzip -p $CODEDX_LATEST_ARCHIVE codedx/$CODEDX_PACKAGE > $CODEDX_PACKAGE && \
+  echo "Removing $CODEDX_LATEST_ARCHIVE..." && \
+  rm $CODEDX_LATEST_ARCHIVE; fi
 WORKDIR /usr/local/tomcat/conf
 COPY context.xml .
 RUN mkdir /usr/local/tomcat/bin/templates
