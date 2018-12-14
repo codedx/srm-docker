@@ -51,7 +51,7 @@ This sections contains instructions for manually building and running a docker b
 These build instructions detail how to build the Tomcat/Code Dx docker image.
 1. Install docker using **[these instructions](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-docker-ce-1)**.
 2. Either skip this step to use the latest `codedx.war` file or unzip the `codedx.war` file from a specific Code Dx distribution into the following folder (relative to the root of the repository): `codedx-docker/codedx-tomcat/`. 
-3. Change the working directory to `codedx-docker/codedx-tomact/`, and then as root run the build script: `sudo ./build.sh`
+3. Change the working directory to `codedx-docker/codedx-tomcat/`, and then as root run the build script: `sudo ./build.sh`
 4. An image should be available in your docker installation as well as saved to disk in the `codedx-docker/codedx-tomcat/target/` folder with the name of `codedx.tar`. To verify the image exists in your local docker installation, run `sudo docker images`. To load the image into other docker instances, or after removing the image, use the command: `sudo docker image load --input target/codedx.tar`
 
 ### Run Instructions
