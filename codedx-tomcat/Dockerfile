@@ -41,6 +41,11 @@ COPY templates/logback.xml.base .
 WORKDIR /usr/local/tomcat/bin
 COPY start.sh .
 RUN chmod +x start.sh
+RUN useradd -Ms /bin/bash codedx
+RUN chown -R codedx /opt/codedx
+RUN chown -R codedx /usr/local/tomcat
 VOLUME ["/opt/codedx"]
+USER codedx
+WORKDIR /usr/local/tomcat/bin
 EXPOSE 8080
 CMD ["start.sh"]
