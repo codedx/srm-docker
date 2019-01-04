@@ -85,7 +85,7 @@ then
 		SUPERUSER_PASSWORD="secret"
 	fi
 	echo "Running install command..."
-	java -cp /usr/local/tomcat/webapps/codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/codedx/WEB-INF/classes/ com.avi.codedx.installer.Install appdata=$CODEDX_APPDATA superuser-name=$SUPERUSER_NAME superuser-pass=$SUPERUSER_PASSWORD
+	java "$@" -cp /usr/local/tomcat/webapps/codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/codedx/WEB-INF/classes/ com.avi.codedx.installer.Install appdata=$CODEDX_APPDATA superuser-name=$SUPERUSER_NAME superuser-pass=$SUPERUSER_PASSWORD
 	echo $?
 else
 	echo "Uzipping war for codedx upgrade..."
@@ -94,7 +94,7 @@ else
 	unzip -qq ../codedx.war
 	cd ../
 	echo "Running upgrade command..."
-	java -cp /usr/local/tomcat/webapps/updated-codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/updated-codedx/WEB-INF/classes/ com.avi.codedx.installer.Update appdata=$CODEDX_APPDATA
+	java "$@" -cp /usr/local/tomcat/webapps/updated-codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/updated-codedx/WEB-INF/classes/ com.avi.codedx.installer.Update appdata=$CODEDX_APPDATA
 	rm -rf /usr/local/tomcat/webapps/updated-codedx
 fi
 
