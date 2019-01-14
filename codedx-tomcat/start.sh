@@ -64,15 +64,16 @@ then
 fi
 cp templates/logback.xml.base /opt/codedx/logback.xml
 
+# Extract Code Dx WAR for later upgrade or installation
+echo "Uzipping war for codedx..."
+mkdir /usr/local/tomcat/webapps/codedx
+cd /usr/local/tomcat/webapps/codedx
+unzip -qq ../codedx.war
+cd ../
+
 # Determine whether to install or upgrade code dx
 if [ ! -e /opt/codedx/log-files ]
 then
-	echo "Uzipping war for codedx install..."
-	mkdir /usr/local/tomcat/webapps/codedx
-	cd /usr/local/tomcat/webapps/codedx
-	unzip -qq ../codedx.war
-	cd ../
-
 	#if the user hasn't specified a root codedx user, default to root
 	if [ -z "$SUPERUSER_NAME" ]
 	then
@@ -88,14 +89,8 @@ then
 	java "$@" -cp /usr/local/tomcat/webapps/codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/codedx/WEB-INF/classes/ com.avi.codedx.installer.Install appdata=$CODEDX_APPDATA superuser-name=$SUPERUSER_NAME superuser-pass=$SUPERUSER_PASSWORD
 	echo $?
 else
-	echo "Uzipping war for codedx upgrade..."
-	mkdir /usr/local/tomcat/webapps/updated-codedx
-	cd /usr/local/tomcat/webapps/updated-codedx
-	unzip -qq ../codedx.war
-	cd ../
 	echo "Running upgrade command..."
-	java "$@" -cp /usr/local/tomcat/webapps/updated-codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/updated-codedx/WEB-INF/classes/ com.avi.codedx.installer.Update appdata=$CODEDX_APPDATA
-	rm -rf /usr/local/tomcat/webapps/updated-codedx
+	java "$@" -cp /usr/local/tomcat/webapps/codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/codedx/WEB-INF/classes/ com.avi.codedx.installer.Update appdata=$CODEDX_APPDATA
 fi
 
 # Start tomcat
