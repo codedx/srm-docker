@@ -62,7 +62,12 @@ then
 	edit_config
 	mv templates/codedx.props /opt/codedx/codedx.props
 fi
-cp templates/logback.xml.base /opt/codedx/logback.xml
+
+# Create logback file if none is found
+if [ ! -f /opt/codedx/logback.xml ]
+then
+	cp templates/logback.xml.base /opt/codedx/logback.xml
+fi
 
 # Extract Code Dx WAR for later upgrade or installation
 echo "Uzipping war for codedx..."
