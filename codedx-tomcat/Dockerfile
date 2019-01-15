@@ -43,7 +43,8 @@ COPY start.sh .
 RUN chmod +x start.sh
 RUN useradd -Ms /bin/bash codedx
 RUN chown -R codedx /opt/codedx
-RUN chown -R codedx /usr/local/tomcat
+RUN chmod o+rx /usr/local/tomcat/bin/*
+RUN chmod o+rw /usr/local/tomcat/webapps
 VOLUME ["/opt/codedx"]
 USER codedx
 WORKDIR /usr/local/tomcat/bin
