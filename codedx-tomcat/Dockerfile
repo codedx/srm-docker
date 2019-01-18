@@ -44,7 +44,8 @@ RUN chmod +x start.sh
 RUN useradd -Ms /bin/bash codedx
 RUN chown -R codedx /opt/codedx
 RUN chmod o+rx /usr/local/tomcat/bin/*
-RUN chmod o+rw /usr/local/tomcat/webapps
+RUN chmod o+r /usr/local/tomcat/bin/templates/*
+RUN chmod o+rw /usr/local/tomcat/webapps /usr/local/tomcat/bin/templates
 VOLUME ["/opt/codedx"]
 USER codedx
 WORKDIR /usr/local/tomcat/bin
