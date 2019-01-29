@@ -18,6 +18,8 @@ RUN mkdir /opt/codedx
 ENV CODEDX_APPDATA=/opt/codedx
 WORKDIR /opt/codedx
 COPY license.lic .
+WORKDIR /etc/ssl/certs/java
+COPY cacerts .
 WORKDIR /usr/local/tomcat/webapps
 RUN rm -rf *
 COPY codedx.war .
