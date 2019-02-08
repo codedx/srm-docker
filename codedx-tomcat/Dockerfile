@@ -19,7 +19,10 @@ ENV CODEDX_APPDATA=/opt/codedx
 WORKDIR /opt/codedx
 COPY license.lic .
 WORKDIR /etc/ssl/certs/java
-COPY cacerts .
+COPY cacerts ./cacerts-codedx
+RUN CACERTS_CUSTOM=/etc/ssl/certs/java/cacerts-codedx && \
+  CACERTS=/etc/ssl/certs/java/cacerts && \
+  if test -s $CACERTS_CUSTOM; then cp -f $CACERTS_CUSTOM $CACERTS; fi && rm $CACERTS_CUSTOM
 WORKDIR /usr/local/tomcat/webapps
 RUN rm -rf *
 COPY codedx.war .
