@@ -40,12 +40,13 @@ COPY templates/codedx.props.base .
 COPY templates/logback.xml.base .
 WORKDIR /usr/local/tomcat/bin
 COPY start.sh .
-RUN chmod +x start.sh
-RUN useradd -Ms /bin/bash codedx
-RUN chown -R codedx /opt/codedx
-RUN chmod o+rx /usr/local/tomcat/bin/*
-RUN chmod o+r /usr/local/tomcat/bin/templates/*
-RUN chmod o+rw /usr/local/tomcat/webapps /usr/local/tomcat/bin/templates
+RUN \
+  chmod +x start.sh && \
+  useradd -Ms /bin/bash codedx && \
+  chown -R codedx /opt/codedx && \
+  chmod o+rx /usr/local/tomcat/bin/* && \
+  chmod o+r /usr/local/tomcat/bin/templates/* && \
+  chmod o+rw /usr/local/tomcat/webapps /usr/local/tomcat/bin/templates /usr/local/tomcat/temp
 VOLUME ["/opt/codedx"]
 USER codedx
 WORKDIR /usr/local/tomcat/bin
