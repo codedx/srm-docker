@@ -11,13 +11,18 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-FROM tomcat
+FROM tomcat:8.5.37
 
 USER root
 RUN mkdir /opt/codedx
 ENV CODEDX_APPDATA=/opt/codedx
 WORKDIR /opt/codedx
 COPY license.lic .
+WORKDIR /etc/ssl/certs/java
+COPY cacerts ./cacerts-codedx
+RUN CACERTS_CUSTOM=/etc/ssl/certs/java/cacerts-codedx && \
+  CACERTS=/etc/ssl/certs/java/cacerts && \
+  if test -s $CACERTS_CUSTOM; then cp -f $CACERTS_CUSTOM $CACERTS; fi && rm $CACERTS_CUSTOM
 WORKDIR /usr/local/tomcat/webapps
 RUN rm -rf *
 COPY codedx.war .
