@@ -76,6 +76,28 @@ cd /usr/local/tomcat/webapps/codedx
 unzip -qq ../codedx.war
 cd ../
 
+# Wait for the database to accept a connection
+DATABASE_READY=false
+DBSERVERNAME="$(echo $DB_URL | cut -d'/' -f 3)"
+for i in {1..60}
+do
+	if (timeout 2 bash -c </dev/tcp/${DBSERVERNAME}/3306 echo $?)
+	then
+		echo $"Successfully connected to /dev/tcp/${DBSERVERNAME}/3306"
+		DATABASE_READY=true
+		break
+	else
+		echo "Retrying database connection..."
+		sleep 2
+	fi
+done
+
+if [ "$DATABASE_READY" = false ]
+then
+	echo "The web application cannot start at this time because the database server $DBSERVERNAME is not accepting a connection on port 3306."
+	exit 1
+fi
+
 # Determine whether to install or upgrade code dx
 if [ ! -e /opt/codedx/log-files ]
 then
