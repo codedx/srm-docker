@@ -72,7 +72,7 @@ RUN echo "deb http://download.mono-project.com/repo/debian stable-stretch/snapsh
 
 RUN \
   chmod +x start.sh && \
-  useradd -Ms /bin/bash codedx && \
+  useradd -m -s /bin/bash codedx && \
   chown -R codedx /opt/codedx && \
   chmod o+rx /usr/local/tomcat/bin/* && \
   chmod o+r /usr/local/tomcat/bin/templates/* && \
