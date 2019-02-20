@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#   Copyright 2017 Code Dx, Inc
+#   Copyright 2019 Code Dx, Inc
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -76,21 +76,24 @@ cd /usr/local/tomcat/webapps/codedx
 unzip -qq ../codedx.war
 cd ../
 
-# Wait for the database to accept a connection
-DATABASE_READY=false
-DBSERVERNAME="$(echo $DB_URL | cut -d'/' -f 3)"
-for i in {1..60}
-do
-	if (timeout 2 bash -c </dev/tcp/${DBSERVERNAME}/3306 echo $?)
-	then
-		echo $"Successfully connected to /dev/tcp/${DBSERVERNAME}/3306"
-		DATABASE_READY=true
-		break
-	else
-		echo "Retrying database connection..."
-		sleep 2
-	fi
-done
+if [ ! -z "$DB_URL" ]
+then
+	# Wait for the database to accept a connection
+	DATABASE_READY=false
+	DBSERVERNAME="$(echo $DB_URL | cut -d'/' -f 3)"
+	for i in {1..60}
+	do
+		if (timeout 2 bash -c </dev/tcp/${DBSERVERNAME}/3306 echo $?)
+		then
+			echo $"Successfully connected to /dev/tcp/${DBSERVERNAME}/3306"
+			DATABASE_READY=true
+			break
+		else
+			echo "Retrying database connection..."
+			sleep 2
+		fi
+	done
+fi
 
 if [ "$DATABASE_READY" = false ]
 then
