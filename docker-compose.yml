@@ -14,7 +14,7 @@
 version: '2'
 services:
     codedx-db:
-        image: mariadb
+        image: mariadb:10.3.13
         environment:
             - MYSQL_ROOT_PASSWORD=root
             - MYSQL_DATABASE=codedx
@@ -22,7 +22,7 @@ services:
             - codedx-db-files:/var/lib/mysql
         command: --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v3.6.1
+        image: codedx/codedx-tomcat:v3.7.0
         environment:
             - DB_URL=jdbc:mysql://codedx-db/codedx
             - DB_DRIVER=com.mysql.jdbc.Driver
