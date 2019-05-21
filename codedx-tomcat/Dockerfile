@@ -1,4 +1,4 @@
-#   Copyright 2017 Code Dx, Inc
+#   Copyright 2019 Code Dx, Inc
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
 FROM tomcat:8.5.37
 
 USER root
+RUN  apt-get update \
+  && apt-get install -y mono-complete=4.6.2.7+dfsg-1 \
+  && rm -rf /var/lib/apt/lists/* /tmp/*
 RUN mkdir /opt/codedx
 ENV CODEDX_APPDATA=/opt/codedx
 WORKDIR /opt/codedx
@@ -45,9 +48,6 @@ COPY templates/codedx.props.base .
 COPY templates/logback.xml.base .
 WORKDIR /usr/local/tomcat/bin
 COPY start.sh .
-RUN  apt-get update \
-  && apt-get install -y mono-complete=4.6.2.7+dfsg-1 \
-  && rm -rf /var/lib/apt/lists/* /tmp/*
 RUN \
   chmod +x start.sh && \
   useradd -m -s /bin/bash codedx && \
