@@ -50,13 +50,14 @@ WORKDIR /usr/local/tomcat/bin
 COPY start.sh .
 RUN \
   chmod +x start.sh && \
-  useradd -m -s /bin/bash codedx && \
+  useradd -m -u 1000 -s /bin/bash codedx && \
   chown -R codedx /opt/codedx && \
   chmod o+rx /usr/local/tomcat/bin/* && \
   chmod o+r /usr/local/tomcat/bin/templates/* && \
   chmod o+rw /usr/local/tomcat/webapps /usr/local/tomcat/bin/templates /usr/local/tomcat/temp
 VOLUME ["/opt/codedx"]
-USER codedx
+# Set user by ID to support non-root enforcement policies
+USER 1000
 WORKDIR /usr/local/tomcat/bin
 EXPOSE 8080
 CMD ["start.sh"]
