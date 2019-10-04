@@ -20,7 +20,7 @@ services:
             - MYSQL_DATABASE=codedx
         volumes:
             - codedx-db-files:/var/lib/mysql
-        command: --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0
+        command: --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0 --character-set-server=utf8mb4
     codedx-tomcat:
         image: codedx/codedx-tomcat:v4.2.4
         environment:
