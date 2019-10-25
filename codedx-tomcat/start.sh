@@ -119,8 +119,7 @@ then
 	java "$@" -cp /usr/local/tomcat/webapps/codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/codedx/WEB-INF/classes/ com.avi.codedx.installer.Install appdata=$CODEDX_APPDATA superuser-name=$SUPERUSER_NAME superuser-pass=$SUPERUSER_PASSWORD
 	echo $?
 else
-	echo "Running upgrade command..."
-	java "$@" -cp /usr/local/tomcat/webapps/codedx/WEB-INF/lib/*:/usr/local/tomcat/webapps/codedx/WEB-INF/classes/ com.avi.codedx.installer.Update appdata=$CODEDX_APPDATA
+	echo "Code Dx already installed, starting tomcat..."
 fi
 
 # Start tomcat
