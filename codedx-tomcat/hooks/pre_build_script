@@ -1,0 +1,36 @@
+#!/bin/bash
+
+DOCKER_TAG=$1
+
+if [[ -z "${DOCKER_TAG// }" ]]; then
+    echo "Expected to find DOCKER_TAG"
+    exit 1
+fi
+echo "Docker tag is $DOCKER_TAG"
+
+date
+apk add curl
+rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+
+CODEDX_VERSION=${DOCKER_TAG:1}
+echo "Code Dx version is $CODEDX_VERSION."
+
+CODEDX_ARCHIVE="CodeDx-$CODEDX_VERSION.zip"
+CODEDX_ARCHIVE_URL="https://codedx.com/installers/$CODEDX_ARCHIVE"
+
+echo "Downloading '$CODEDX_ARCHIVE' from '$CODEDX_ARCHIVE_URL'..."
+curl -H "User-Agent: docker-pre-build" -LO $CODEDX_ARCHIVE_URL
+rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+
+CODEDX_PACKAGE=codedx.war
+
+echo "Extracing codedx/$CODEDX_PACKAGE file from $CODEDX_ARCHIVE..."
+unzip -p $CODEDX_ARCHIVE codedx/$CODEDX_PACKAGE > $CODEDX_PACKAGE
+rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+
+echo "Removing zip $CODEDX_ARCHIVE..."
+rm $CODEDX_ARCHIVE
+rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
+
+date
+echo "Done"
