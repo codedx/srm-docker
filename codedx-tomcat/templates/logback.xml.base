@@ -29,6 +29,8 @@
 		</encoder>
 	</appender>
 
+	<logger name="net.liftweb" level="WARN" />
+
 	<root level="INFO">
 		<appender-ref ref="logFile" />
 	</root>
