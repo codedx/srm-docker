@@ -14,7 +14,7 @@
 version: '2'
 services:
     codedx-db:
-        image: mariadb:10.3.13
+        image: mariadb:10.3.22
         environment:
             - MYSQL_ROOT_PASSWORD=root
             - MYSQL_DATABASE=codedx
