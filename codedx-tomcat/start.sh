@@ -102,7 +102,7 @@ then
 fi
 
 # Determine whether to install or upgrade code dx
-if [ ! -e /opt/codedx/log-files ]
+if [ ! -e /opt/codedx/.installation ]
 then
 	#if the user hasn't specified a root codedx user, default to root
 	if [ -z "$SUPERUSER_NAME" ]
