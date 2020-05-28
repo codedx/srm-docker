@@ -44,6 +44,7 @@ WORKDIR /usr/local/tomcat/bin/templates
 COPY templates/codedx.props.base .
 COPY templates/logback.xml.base .
 WORKDIR /usr/local/tomcat/bin
+COPY setenv.sh .
 COPY start.sh .
 RUN \
   chmod +x start.sh && \
