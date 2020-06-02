@@ -11,19 +11,19 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-FROM tomcat:8.5.37
+FROM tomcat:8.5.55
 
 USER root
 ENV DOTNET_SDK_VERSION 2.2.402
 RUN  apt-get update \
-  && apt-get install -y mono-complete=4.6.2.7+dfsg-1 \
+  && apt-get install -y mono-complete=5.18.0.240+dfsg-3 \
   && apt-get install -y --no-install-recommends \
     libc6 \
     libgcc1 \
     libgssapi-krb5-2 \
-    libicu57 \
+    libicu63 \
     liblttng-ust0 \
-    libssl1.0.2 \
+    libssl1.1 \
     libstdc++6 \
     zlib1g \
   && rm -rf /var/lib/apt/lists/* /tmp/* \

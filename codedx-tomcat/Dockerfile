@@ -11,7 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-FROM codedx/codedx-tomcat-base:v1.0
+FROM codedx/codedx-tomcat-base:v1.1
 
 USER root
 RUN mkdir /opt/codedx
@@ -44,6 +44,7 @@ WORKDIR /usr/local/tomcat/bin/templates
 COPY templates/codedx.props.base .
 COPY templates/logback.xml.base .
 WORKDIR /usr/local/tomcat/bin
+COPY setenv.sh .
 COPY start.sh .
 RUN \
   chmod +x start.sh && \
