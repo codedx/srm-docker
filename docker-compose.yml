@@ -22,7 +22,7 @@ services:
             - codedx-db-files:/var/lib/mysql
         command: --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0 --character-set-server=utf8mb4
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v5.2.4
+        image: codedx/codedx-tomcat:v5.2.6
         environment:
             - DB_URL=jdbc:mysql://codedx-db/codedx
             - DB_DRIVER=com.mysql.jdbc.Driver
