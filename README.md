@@ -14,8 +14,8 @@ This section details how to start up a functional instance of Code Dx using Dock
 2. Install **[docker-compose](https://docs.docker.com/compose/install/)**.
 3. If desired, edit the following values in the `docker-compose.yml` file.
 - The following configuration values affect the database container:
-  - MYSQL_ROOT_PASSWORD: The password for MYSQL's root user.
-  - MYSQL_DATABASE: The name of the database to be created automatically when the container is started.
+  - MARIADB_ROOT_PASSWORD: The password for MariaDB's root user.
+  - MARIADB_DATABASE: The name of the database to be created automatically when the container is started.
 - The following configuration values affect the Tomcat based Code Dx container:
   - DB_URL: The url that Code Dx uses to connect to it's database.
   - DB_DRIVER: The jdbc database driver that Code Dx uses.
