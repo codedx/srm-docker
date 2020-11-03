@@ -14,13 +14,14 @@
 version: '2'
 services:
     codedx-db:
-        image: mariadb:10.3.22
+        image: bitnami/mariadb:10.3.22-debian-10-r27
         environment:
-            - MYSQL_ROOT_PASSWORD=root
-            - MYSQL_DATABASE=codedx
+            - MARIADB_ROOT_USER=root
+            - MARIADB_ROOT_PASSWORD=root
+            - MARIADB_DATABASE=codedx
+            - MARIADB_EXTRA_FLAGS=--optimizer_search_depth=0 --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --lower_case_table_names=1
         volumes:
-            - codedx-db-files:/var/lib/mysql
-        command: --optimizer_search_depth=0 --innodb_flush_log_at_trx_commit=0 --character-set-server=utf8mb4
+            - codedx-database-volume:/bitnami/mariadb
     codedx-tomcat:
         image: codedx/codedx-tomcat:v5.2.6
         environment:
@@ -31,11 +32,11 @@ services:
             - SUPERUSER_NAME=admin
             - SUPERUSER_PASSWORD=secret
         volumes:
-            - codedx-appdata:/opt/codedx
+            - codedx-appdata-volume:/opt/codedx
         ports:
             - 8080:8080
         depends_on:
             - codedx-db
 volumes:
-    codedx-db-files:
-    codedx-appdata:
+    codedx-database-volume:
+    codedx-appdata-volume:
