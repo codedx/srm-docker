@@ -36,7 +36,7 @@ This Tomcat container can support HTTP over SSL. For example, generate a self-si
 openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=New York/L=Northport/O=Code Dx/CN=localhost" -keyout ./ssl.key -out ./ssl.crt
 ```
 
-The `server.xml` file available in `codedx-docker/codedx-tomcat/templates/` contains a configuration that supports SSL using **[Tomcat's SSL capability](https://tomcat.apache.org/tomcat-8.0-doc/ssl-howto.html)**.
+The `server.xml` file contains a configuration that supports SSL using **[Tomcat's SSL capability](https://tomcat.apache.org/tomcat-8.0-doc/ssl-howto.html)**.
 
 This template can be mounted over the existing `server.xml` in the Docker image. The SSL certificate and private key must also be mounted.
 
