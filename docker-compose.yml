@@ -14,7 +14,7 @@
 version: '2'
 services:
     codedx-db:
-        image: bitnami/mariadb:10.3.22-debian-10-r27
+        image: bitnami/mariadb:10.3.25-debian-10-r18
         environment:
             - MARIADB_ROOT_PASSWORD=root
             - MARIADB_DATABASE=codedx
