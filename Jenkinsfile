@@ -91,7 +91,7 @@ pipeline {
 		stage('Release') {
 
 			agent {
-				label 'powershell-small'
+				label 'codedx-release-build-small'
 			}
 
 			stages {
