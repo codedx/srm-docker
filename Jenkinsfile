@@ -106,6 +106,18 @@ pipeline {
 					}
 				}
 
+				stage('Test') {
+
+					steps {
+
+						dir ('repo') {
+
+							// note: the -CI parameter sets Run.Exit, but it also creates two files in the working directory
+							sh 'pwsh -command "&{ Import-Module Pester; \\$cfg = [PesterConfiguration]::Default; \\$cfg.Run.Exit = \\$true; \\$cfg.Run.Path = \'./.version/test/version.tests.ps1\'; Invoke-Pester -Configuration \\$cfg }"'
+						}
+					}
+				}
+
 				stage('Get Code Dx Version') {
 
 					steps {
@@ -154,7 +166,7 @@ pipeline {
 
 							sh 'git config user.name \'Code Dx Build\' && git config user.email support@codedx.com'
 							sh "git checkout ${scm.branches[0]}"
-							sh "pwsh -command \"& {'./docker-compose.yml','./README.md' | % { \\\$file=\\\$_; (get-content \\\$file) -replace 'image:\\scodedx/codedx-tomcat:v(\\d+\\.\\d+\\.\\d+)', 'image: codedx/codedx-tomcat:$codeDxVersion' | Out-File \\\$file -Encoding ascii }}\""
+							sh "pwsh ./.version/version.ps1 $codeDxVersion"
 							sh 'git add .'
 							sh "git commit -m 'feat: update to $codeDxVersion'"
 
@@ -165,26 +177,6 @@ pipeline {
 									git config --local credential.helper "!helper() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_TOKEN; }; helper"
 									git push
 								''')
-							}
-						}
-					}
-				}
-
-				stage('Get Next Version') {
-
-					steps {
-
-						dir ('repo') {
-
-							withCredentials([usernamePassword(credentialsId: 'codedx-build-github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
-
-								script {
-
-									expectedVersion = runSemanticRelease(GIT_TOKEN, true)
-									if (expectedVersion == '') {
-										error('Build failed because commits since the last version do not require a new release')
-									}
-								}
 							}
 						}
 					}
@@ -201,8 +193,8 @@ pipeline {
 								script {
 
 									versionReleased = runSemanticRelease(GIT_TOKEN, false)
-									if (expectedVersion != versionReleased) {
-										error("Build failed because released version ($versionReleased) does not match expected version ($expectedVersion)")
+									if (versionReleased == '') {
+										error('Build failed because commits since the last version do not require a new release')
 									}
 								}
 							}
