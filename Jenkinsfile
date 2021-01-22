@@ -91,7 +91,7 @@ pipeline {
 		stage('Release') {
 
 			agent {
-				label 'codedx-tool-orchestration-build-small'
+				label 'powershell-small'
 			}
 
 			stages {
@@ -152,7 +152,23 @@ pipeline {
 
 						milestone ordinal: 1, label: 'Confirm'
 
-						input message: "Continue with latest Code Dx version ($codeDxVersion)?"
+						script {
+
+							try {
+
+								timeout(time: 15) {
+
+									// pipeline not triggered by SCM and input response should occur with minimal delay, so invoke input in this stage (leaving container running)
+									input message: "Continue with latest Code Dx version ($codeDxVersion)?"
+								}
+							} catch (err) {
+
+								if (err instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException) {
+									error('Timeout occurred while awaiting release confirmation')
+								}
+								error(err.toString())
+							}
+						}
 					}
 				}
 
