@@ -16,7 +16,8 @@ param (
 		[string] $dbName = 'codedx',
 		[string] $dbDumpFilePath,
 		[string] $appDataPath,
-		[string] $dbRootPwd
+		[string] $dbRootPwd,
+		[switch] $skipCodeDxRestart
 )
 
 $ErrorActionPreference = 'Stop'
@@ -108,7 +109,7 @@ if ($LASTEXITCODE -ne 0) {
 	throw 'Unable to copy dump file to directory'
 }
 
-Write-Verbose 'Importing database dump file...'
+Write-Verbose 'Importing database dump file (may take a while)...'
 docker exec $dbContainerName "bash" "-c" "mysql -uroot --password=""$dbRootPwd"" $dbName < /tmp/codedx/dump-codedx.sql"
 if ($LASTEXITCODE -ne 0) {
 	throw 'Unable to import database dump file'
@@ -144,6 +145,12 @@ Write-Verbose 'Copying directories...'
 			throw "Unable to copy directory $path"
 		}
 	}
+}
+
+if ($skipCodeDxRestart) {
+
+	Write-Host 'Data migration complete. Code Dx must be restarted at this time (run: docker-compose restart)'
+	return
 }
 
 Write-Verbose 'Restarting Code Dx...'

@@ -28,6 +28,8 @@ This section details how to start up a functional instance of Code Dx using Dock
 5. When the message "The Server is now ready!" appears in the console, navigate to http://localhost:8080/codedx to log into your newly spun up Code Dx instance.
 6. To stop, run `docker-compose stop`, and to remove the Docker containers automatically created, run `docker-compose down`.
 
+>Note: If you want to migrate data from an existing Code Dx system, refer to [these instructions](./docs/migrate-data.md).
+
 ## HTTP Over SSL
 
 This Tomcat container can support HTTP over SSL. For example, generate a self-signed certificate with `openssl` (or better yet, obtain a real certificate from a certificate authority):
