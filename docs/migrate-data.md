@@ -2,7 +2,7 @@
 
 Here are the steps to migrate your Code Dx data from a system created by the Code Dx Installer to your Docker Compose Code Dx instance. The Code Dx version you are running with Docker Compose must be equal to or greater than your source Code Dx system (with the data you want to migrate). If necessary, upgrade your Code Dx version before migrating your Code Dx data.
 
-1) Log on to the system running Code Dx with Docker Compose, change directory to this repository (codedx-docker folder) and verify that Code Dx is running.
+1) Log on to the system running Code Dx with Docker Compose, change directory to this repository (codedx-docker folder), and verify that Code Dx is running.
 
 2) Install [PowerShell Core v7](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7), if necessary (run `pwsh -version` to see installed version).
 
@@ -29,7 +29,7 @@ cd codedx-docker
 pwsh ./admin/migrate-data.ps1
 ```
 
->Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker_codedx-tomcat_1), `-dbContainerName` (codedx-docker_codedx-db_1), and `dbName` (codedx). You can find your Docker container names by running `docker ps
+>Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker_codedx-tomcat_1), `-dbContainerName` (codedx-docker_codedx-db_1), and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
 
 Your script output should look similar to this:
 
