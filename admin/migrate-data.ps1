@@ -134,6 +134,8 @@ Write-Verbose 'Deleting directories...'
 Write-Verbose 'Copying directories...'
 'analysis-files','keystore','mltriage-files' | ForEach-Object {
 
+	$owner = 'codedx'
+
 	$path = join-path $appDataPath $_
 	if (Test-Path $path -PathType Container) {
 
@@ -144,6 +146,9 @@ Write-Verbose 'Copying directories...'
 		if ($LASTEXITCODE -ne 0) {
 			throw "Unable to copy directory $path"
 		}
+
+		Write-Verbose "Changing directory ownership of '$destinationDir' to $owner..."
+		docker exec -u 0 $tomcatContainerName chown -R $owner`:$owner $destinationDir
 	}
 }
 
