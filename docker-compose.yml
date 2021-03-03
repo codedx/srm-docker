@@ -22,7 +22,7 @@ services:
         volumes:
             - codedx-database-volume:/bitnami/mariadb
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v5.2.15
+        image: codedx/codedx-tomcat:v5.2.16
         environment:
             - DB_URL=jdbc:mysql://codedx-db/codedx
             - DB_DRIVER=com.mysql.jdbc.Driver
