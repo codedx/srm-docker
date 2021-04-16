@@ -46,7 +46,7 @@ To configure, edit the `docker-compose.yml` codedx-tomcat section to look like:
 
 ```yaml
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v5.3.3
+        image: codedx/codedx-tomcat:v5.3.4
         environment:
             - DB_URL=jdbc:mysql://codedx-db/codedx
             - DB_DRIVER=com.mysql.jdbc.Driver
