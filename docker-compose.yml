@@ -30,6 +30,7 @@ services:
             - DB_PASSWORD=root
             - SUPERUSER_NAME=admin
             - SUPERUSER_PASSWORD=secret
+            - CODEDX_AUTOUPDATE=true
         volumes:
             - codedx-appdata-volume:/opt/codedx
         ports:
