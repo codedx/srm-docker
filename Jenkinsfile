@@ -66,15 +66,12 @@ def getLatestGitHubRelease(token, owner, repo) {
 
 def slackSendMessage(success) {
 
-	def messageColor = 'good'
-	def messageStatus = 'succeeded'
-	if (!success) {
-		messageColor = 'warning'
-		messageStatus = 'failed'
-	}
-
-	withCredentials([string(credentialsId: 'dockerSlackChannel', variable: 'slackChannel')]) {
-		slackSend channel: slackChannel, color: messageColor, message: "Code Dx Docker Compose: Release stage $messageStatus: <${env.BUILD_URL}console|Open>"
+	if (success) {
+		slackSend color: 'good', message: "Code Dx Docker Compose: Release stage succeeded: <${env.BUILD_URL}console|Open>"
+	} else {
+		withCredentials([string(credentialsId: 'dockerSlackChannel', variable: 'slackChannel')]) {
+			slackSend channel: slackChannel, color: 'warning', message: "Code Dx Docker Compose: Release stage failed: <${env.BUILD_URL}console|Open>"
+		}
 	}
 }
 
