@@ -35,8 +35,8 @@ Describe 'version.ps1' {
 			$fileContent[$_] | Select-String -Pattern "image: $oldVersion" -SimpleMatch -Quiet | Should -BeFalse
 		}
 
-		Assert-MockCalled -CommandName 'Get-Content' -Exactly 2
-		Assert-MockCalled -CommandName 'Set-Content' -Exactly 2
+		Assert-MockCalled -CommandName 'Get-Content' -Exactly 3
+		Assert-MockCalled -CommandName 'Set-Content' -Exactly 3
 	}
 
 	It 'matched version is a no-op' {
@@ -58,8 +58,8 @@ Describe 'version.ps1' {
 			$fileContent[$_] | Select-String -Pattern "image: $oldVersion" -SimpleMatch -Quiet | Should -BeTrue
 		}
 
-		Assert-MockCalled -CommandName 'Get-Content' -Exactly 2
-		Assert-MockCalled -CommandName 'Set-Content' -Exactly 2
+		Assert-MockCalled -CommandName 'Get-Content' -Exactly 3
+		Assert-MockCalled -CommandName 'Set-Content' -Exactly 3
 	}
 
 	BeforeAll {
@@ -92,6 +92,25 @@ services:
 			- codedx-db
 volumes:
 	codedx-database-volume:
+	codedx-appdata-volume:
+'@
+			'./docker-compose-external-db.yml' = @'
+version: '2'
+services:
+	codedx-tomcat:
+		image: codedx/codedx-tomcat:v1.2.3
+		environment:
+			- DB_URL=jdbc:mysql://codedx-db/codedx
+			- DB_DRIVER=com.mysql.jdbc.Driver
+			- DB_USER=root
+			- DB_PASSWORD=root
+			- SUPERUSER_NAME=admin
+			- SUPERUSER_PASSWORD=secret
+		volumes:
+			- codedx-appdata-volume:/opt/codedx
+		ports:
+			- 8080:8080
+volumes:
 	codedx-appdata-volume:
 '@
 			'./README.md' = @'
