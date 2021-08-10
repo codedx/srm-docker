@@ -11,6 +11,10 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+#
+#   For details on configuring an external Code Dx database, refer to this URL:
+#   https://github.com/codedx/codedx-kubernetes/blob/master/setup/core/docs/db/use-external-database.md
+#
 version: '2'
 services:
     codedx-tomcat:
