@@ -18,7 +18,7 @@
 version: '2'
 services:
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v5.4.9
+        image: codedx/codedx-tomcat:v5.4.10
         environment:
             - DB_URL=jdbc:mysql://codedx-db/codedx
             - DB_DRIVER=com.mysql.jdbc.Driver
