@@ -27,8 +27,8 @@ services:
             - SUPERUSER_NAME=admin
             - SUPERUSER_PASSWORD=secret
         volumes:
-            - codedx-appdata-volume:/opt/codedx
+            - codedx-appdata-ex-db-volume:/opt/codedx
         ports:
             - 8080:8080
 volumes:
-    codedx-appdata-volume:
+    codedx-appdata-ex-db-volume:
