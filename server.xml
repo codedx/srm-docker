@@ -120,6 +120,16 @@
                redirectPort="8443" />
     -->
 
+    <Connector port="8443" protocol="org.apache.coyote.http11.Http11AprProtocol"
+               maxThreads="150" SSLEnabled="true" >
+        <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
+        <SSLHostConfig>
+            <Certificate certificateKeyFile="conf/ssl.key"
+                         certificateFile="conf/ssl.crt"
+                         type="RSA" />
+        </SSLHostConfig>
+    </Connector>
+
     <!-- An Engine represents the entry point (within Catalina) that processes
          every request.  The Engine implementation for Tomcat stand alone
          analyzes the HTTP headers included with the request, and passes them
