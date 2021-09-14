@@ -4,7 +4,7 @@ This repository lets you create a [Code Dx](https://www.codedx.com) installation
 
 The installation uses `docker-compose` to stand up a functional instance of Code Dx automatically, pulling the Tomcat/Code Dx image from Docker Hub, and starting a properly configured MariaDB container.
 
-# Installation
+## Installation
 
 ### Overview
 This section details how to start up a functional instance of Code Dx using Docker, accessible via port 8080.
@@ -30,7 +30,38 @@ This section details how to start up a functional instance of Code Dx using Dock
 
 >Note: If you want to migrate data from an existing Code Dx system, refer to [these instructions](./docs/migrate-data.md).
 
-## HTTP Over SSL
+### Custom cacerts
+
+Your Code Dx instance can trust self-signed certificates or certificates issued by certificate authorities not trusted by default. Obtain a copy of the cacerts file from a Java 8 JRE and trust a certificate by running the following keytool command:
+
+```
+keytool -import -trustcacerts -keystore ./cacerts -file /path/to/cert -alias cert-name
+```
+
+>Note: The default password for a Java cacerts file is `changeit`.
+
+You can mount your cacerts file by adding a line to the volumes list in the codedx-tomcat section:
+
+```yaml
+    codedx-tomcat:
+        image: codedx/codedx-tomcat:v5.4.15
+        environment:
+            - DB_URL=jdbc:mysql://codedx-db/codedx
+            - DB_DRIVER=com.mysql.jdbc.Driver
+            - DB_USER=root
+            - DB_PASSWORD=root
+            - SUPERUSER_NAME=admin
+            - SUPERUSER_PASSWORD=secret
+        volumes:
+            - codedx-appdata:/opt/codedx
+            - /path/to/cacerts:/opt/java/openjdk/jre/lib/security/cacerts
+        ports:
+            - 8443:8443
+        depends_on:
+            - codedx-db
+```
+
+### HTTP Over SSL
 
 This Tomcat container can support HTTP over SSL. For example, generate a self-signed certificate with `openssl` (or better yet, obtain a real certificate from a certificate authority):
 
