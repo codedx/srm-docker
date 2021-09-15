@@ -56,7 +56,7 @@ You can mount your cacerts file by adding a line to the volumes list in the code
             - codedx-appdata:/opt/codedx
             - /path/to/cacerts:/opt/java/openjdk/jre/lib/security/cacerts
         ports:
-            - 8443:8443
+            - 8080:8080
         depends_on:
             - codedx-db
 ```
