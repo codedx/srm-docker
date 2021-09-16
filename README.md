@@ -44,7 +44,7 @@ You can mount your cacerts file by adding a line to the volumes list in the code
 
 ```yaml
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v5.4.15
+        image: codedx/codedx-tomcat:v5.4.15.1
         environment:
             - DB_URL=jdbc:mysql://codedx-db/codedx
             - DB_DRIVER=com.mysql.jdbc.Driver
@@ -73,11 +73,11 @@ The `server.xml` file contains a configuration that supports SSL using **[Tomcat
 
 This template can be mounted over the existing `server.xml` in the Docker image. The SSL certificate and private key must also be mounted.
 
-To configure, edit the `docker-compose.yml` codedx-tomcat section to look like:
+Update your codedx-tomcat section with SSL and server.xml volume mounts and switch ports from 8080:8080 to 8443:8443. For example, below is a version of `docker-compose.yml` with the use of port 8443 and extra volume mounts for server.xml, ssl.key, and ssl.crt. Apply a similar update to `docker-compose-external-db.yml` if you're using an external database.
 
 ```yaml
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v5.4.15
+        image: codedx/codedx-tomcat:v5.4.15.1
         environment:
             - DB_URL=jdbc:mysql://codedx-db/codedx
             - DB_DRIVER=com.mysql.jdbc.Driver
