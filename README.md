@@ -61,6 +61,8 @@ You can mount your cacerts file by adding a line to the volumes list in the code
             - codedx-db
 ```
 
+>Note: Append `:Z` to the extra volume mount when using [selinux](https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label).
+
 ### HTTP Over SSL
 
 This Tomcat container can support HTTP over SSL. For example, generate a self-signed certificate with `openssl` (or better yet, obtain a real certificate from a certificate authority):
@@ -95,5 +97,7 @@ Update your codedx-tomcat section with SSL and server.xml volume mounts and swit
         depends_on:
             - codedx-db
 ```
+
+>Note: Append `:Z` to the extra volume mounts when using [selinux](https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label).
 
 After following the rest of each method's respective setup instructions, Code Dx should now be available over https at the following url: https://localhost:8443/codedx
