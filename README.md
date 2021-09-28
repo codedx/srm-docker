@@ -99,7 +99,7 @@ swa.user.rememberme = full
 
 to
 
-```
+```yaml
 swa.user.rememberme = off
 ```
 
