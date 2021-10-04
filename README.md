@@ -63,66 +63,6 @@ You can mount your cacerts file by adding a line to the volumes list in the code
 
 >Note: Append `:Z` to the extra volume mount when using [selinux](https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label).
 
-### Custom Props
-
-Code Dx's features can be customized through the configuration file `codedx.props` which, by default, is located in your tomcat container's `codedx-appdata` volume (typically located at `/opt/codedx`). A full list of configuration parameters and how to change them can be found at [Install Guide](https://codedx.com/Documentation/InstallGuide.html#CodeDxPropertiesFile).
-
-For example, if it wasn't desired for Code Dx to remember the username used to login or persist login sessions, then the property `swa.user.rememberme` can be changed from `full` to `off`.
-
-Here's how this can be done in a Docker Compose install:
-
-1. Start your Code Dx Tomcat container
-
-With our working directory set to where our `docker-compose.yml` file resides, the Tomcat container configured by the `codedx-tomcat` service can be started with the command:
-
-```bash
-docker-compose start codedx-tomcat
-```
-
-2. Copy `/opt/codedx/codedx.props` locally
-
-Here we're copying the `codedx.props` file out of the Tomcat container into our local working directory `.`. You can change the destination of this file to something like `C:\Users\[username]\Documents` or `/home/[username]/` where it's more easily accessible, as we'll need to be editing this file later.
-
-You can find the name of your container with `docker container ls --filter name=tomcat` and use that in place of `codedx-docker_codedx-tomcat_1` if yours varies.
-
-```bash
-docker cp codedx-docker_codedx-tomcat_1:/opt/codedx/codedx.props .
-```
-
-3. Edit your local codedx.props (switching from full to off)
-
-From where you copied `codedx.props` to in the last step, open it with your preferred text editor and change the line
-
-```yaml
-swa.user.rememberme = full
-```
-
-to
-
-```yaml
-swa.user.rememberme = off
-```
-
-Code Dx won't remember usernames or persist sessions once we configure Code Dx with the new props file.
-
-4. Copy codedx.props back
-
-If you're in the same directory as where you copied your props file to, and the tomcat container is running, then we run the following command to replace the old props file in the container with the new one:
-
-```bash
-docker cp codedx.props codedx-docker_codedx-tomcat_1:/opt/codedx/codedx.props
-```
-
-5. Restart your container
-
-Code Dx loads the configuration files on boot, therefore we'll need to restart our tomcat container for our new settings to be properly reflected.
-
-```bash
-docker restart codedx-docker_codedx-tomcat_1
-```
-
-(If you want to stop the Tomcat container running in the background run the command `docker compose stop codedx-tomcat`)
-
 ### HTTP Over SSL
 
 This Tomcat container can support HTTP over SSL. For example, generate a self-signed certificate with `openssl` (or better yet, obtain a real certificate from a certificate authority):
