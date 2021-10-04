@@ -101,7 +101,3 @@ Update your codedx-tomcat section with SSL and server.xml volume mounts and swit
 >Note: Append `:Z` to the extra volume mounts when using [selinux](https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label).
 
 After following the rest of each method's respective setup instructions, Code Dx should now be available over https at the following url: https://localhost:8443/codedx
-
-### Parsing Configuration
-
-If you want to treat quoted values literally in the `codedx-tomcat` service's `environment`, e.g. `DB_PASSWORD="my_password"`, you can add the following environment variable setting: `TRANSFORM_LIST_PARSING=False`. After starting/restarting your `codedx-tomcat` service, quotes will be treated literally for the value of your environment variables.
