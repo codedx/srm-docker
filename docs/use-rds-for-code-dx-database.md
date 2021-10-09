@@ -41,7 +41,7 @@ Here are the steps to run Code Dx with Docker Compose and an Amazon RDS database
     Here is an example of a DB_URL parameter value using hostname `amazon-rds-hostname` and database name `codedxdb`:
 
     ```
-    jdbc:mysql://amazon-rds-hostname/codedxdb?sessionVariables=sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'&useSSL=true&requireSSL=true
+    "jdbc:mysql://amazon-rds-hostname/codedxdb?sessionVariables=sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'&useSSL=true&requireSSL=true"
     ```
 
 7. Follow the [HTTP Over SSL](https://github.com/codedx/codedx-docker#http-over-ssl) instructions if your deployment requires TLS/SSL.
