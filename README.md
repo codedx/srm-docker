@@ -24,9 +24,10 @@ This section details how to start up a functional instance of Code Dx using Dock
   - SUPERUSER_NAME: The root administrator name for Code Dx.
   - SUPERUSER_PASSWORD: The password for the Code Dx root administrator.
   - ports: The list of values underneath this header controls the ports forwarded from the Docker instance to the host machine. The left value represents the port bound on the host machine, the right value represents the port bound in the Docker container. If there is a port conflict on the host machine, alter the left value.
-4. Run `docker-compose up`. Alternatively, run `docker-compose up -d` to detach and run in the background.
-5. When the message "The Server is now ready!" appears in the console, navigate to http://localhost:8080/codedx to log into your newly spun up Code Dx instance.
-6. To stop, run `docker-compose stop`, and to remove the Docker containers automatically created, run `docker-compose down`.
+4. If this is an additional Code Dx docker-compose environment, you may want to familiarize yourself with these [considerations](#Considerations-When-Using-Multiple-Directories) before the next step.
+5. Run `docker-compose up`. Alternatively, run `docker-compose up -d` to detach and run in the background.
+6. When the message "The Server is now ready!" appears in the console, navigate to http://localhost:8080/codedx to log into your newly spun up Code Dx instance.
+7. To stop, run `docker-compose stop`, and to remove the Docker containers automatically created, run `docker-compose down`.
 
 >Note: If you want to migrate data from an existing Code Dx system, refer to [these instructions](./docs/migrate-data.md).
 
@@ -190,3 +191,89 @@ Update your codedx-tomcat section with SSL and server.xml volume mounts and swit
 >Note: Append `:Z` to the extra volume mounts when using [selinux](https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label).
 
 After following the rest of each method's respective setup instructions, Code Dx should now be available over https at the following url: https://localhost:8443/codedx
+
+## Upgrading
+
+### Creating a Backup
+
+Before upgrading to the latest Code Dx version you may wish to create a backup of your Code Dx docker-compose environment. This can be done by running the following command while you're in the `codedx-docker` folder.
+
+```bash
+./scripts/backup [name]
+```
+
+This will create a backup of the following under a volume with the given `name`:
+
+- The database of the `codedx-mariadb` container
+    - If using a remote Code Dx database instance this step will be skipped. A backup of the external database should be created in this case.
+- The codedx appdata contained in the `codedx-appdata` volume
+
+You should see the following output when the backup has been successfully created:
+
+```
+Backup Successfully Created!
+```
+
+Note that if you plan on keeping around backups after an upgrade, be cautious of commands such as `docker volume prune`. This backup volume is not attached to a container and would be deleted.
+
+### Upgrading to the Latest Code Dx Version
+
+The preferred method for upgrading is by pulling the latest changes. While you're in the root of your docker-compose folder:
+
+```bash
+git pull
+```
+
+If your docker-compose environment already has the latest changes you'll see output from git saying it's already up to date. Otherwise, you may have to resolve merge conflicts if changes were made in the docker-compose folder before the upgrade, such as modifying the docker-compose file.
+
+Alternatively, you can download the ZIP representing the latest codedx-docker update. **Note that if you're using the ZIP to replace an existing folder, any changes you made in the docker-compose root folder (such as the docker-compose file) will be overwritten unless you carry over your changes to the new docker-compose folder.** This merge process will be done for you if you use the `git` approach above. The ZIP can be downloaded here: https://github.com/codedx/codedx-docker/archive/refs/heads/master.zip
+
+In order for the latest Code Dx changes to be applied we'll have to restart our containers. First, we need to stop running containers. Replace the docker-compose.yml file in this command with the compose file you're using if it differs.
+
+**(Make sure not to use the -v switch for `down`, we want to keep our volumes)**
+```bash
+docker-compose -f docker-compose.yml down
+```
+
+### Running Code Dx After Upgrade
+
+#### Considerations When Using Multiple Directories
+
+If you're using multiple folders for your Code Dx docker-compose install (e.g. a docker-compose folder for each version of Code Dx) and want to use the same volumes across all of them you should specify the project name `-p` option on relevant docker commands such as `docker-compose up`.
+
+When creating named volumes docker-compose will prepend the project name, which is the current directory name by default, to the volume name. Meaning if you have a docker-compose install under the folder `codedx-docker` and another under `codedx-docker-2` their volume names will be distinct and contain different data. Without specifying the `-p` option the following two named volumes would exist:
+
+- `codedx-docker_codedx-appdata-volume`
+- `codedx-docker-2_codedx-appdata-volume`
+
+Named volumes are created when doing `docker up`, so if there's a specific name you would like your different installs to share you should specify the project name the first time you execute this command, like so:
+
+```bash
+docker-compose -p codedx up
+```
+
+Note that pulling the latest files via git increases the likelihood that all docker-compose commands run from the same directory.
+
+#### Running Code Dx
+
+After successfully upgrading, you can run the following command to see the effects of the upgrade:
+
+```bash
+docker-compose -f docker-compose.yml -p <project-name> up
+```
+
+### Restoring from Backup
+
+In the event that an upgrade has gone wrong or existing Code Dx Data has been corrupted/deleted, you may restore from a [previously created backup](#Creating-a-Backup).
+
+With the following program you can restore Code Dx data with a volume name you specificed when creating the backup. If you simply wish to restore to the most recent saved state you can omit `[backup-volume-name]`
+
+```bash
+./scripts/restore [backup-volume-name]
+```
+
+You should see
+
+```
+Successfully restored from <backup-volume-name> backup!
+```
