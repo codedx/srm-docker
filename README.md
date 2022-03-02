@@ -199,13 +199,18 @@ After following the rest of each method's respective setup instructions, Code Dx
 Before upgrading to the latest Code Dx version you may wish to create a backup of your Code Dx docker-compose environment. This can be done with the included `backup` script in your `codedx-docker/scripts` folder. Make sure you have PowerShell Core installed, if not, downloads can be found [here](https://github.com/PowerShell/PowerShell#get-powershell).
 
 While in the root of the `codedx-docker` folder, stop your containers with the following command before creating the backup to avoid storing incomplete data
-```bash
+```powershell
 docker-compose -f docker-compose.yml down
 ```
 
-Once the containers are stopped, a backup can be created like so:
-```bash
+Once the containers are stopped:
+- If not using an external DB
+```powershell
 ./scripts/backup.ps1 -BackupVolumeName my-codedx-backup
+```
+- If using an external DB, specify the `UsingExternalDb` switch
+```powershell
+./scripts/backup.ps1 -BackupVolumeName my-codedx-backup -UsingExternalDb
 ```
 
 This will create a backup of the following under the named volume `my-codedx-backup`:
@@ -217,7 +222,7 @@ This will create a backup of the following under the named volume `my-codedx-bac
 You should see the following output when the backup has been successfully created:
 
 ```
-Successfuly created backup volume <backup-volume-name>
+Successfully created backup volume <backup-volume-name>
 ```
 
 Note that if you plan on keeping around backups after an upgrade, be cautious of commands such as `docker volume prune`. This backup volume is not attached to a container and would be deleted.
@@ -233,19 +238,19 @@ When creating named volumes docker-compose will prepend the project name, which 
 
 Named volumes are created when doing `docker-compose up`, so if there's a specific name you would like your different installs to share you should specify the project name the first time you execute this command, like so:
 
-```bash
+```powershell
 docker-compose -p codedx up
 ```
 
 Since the backup script works with these volumes it's important to specify the project name on your backup command if it differs from the default name `codedx-docker`. You can specify it like so:
 
-```bash
+```powershell
 ./scripts/backup.ps1 -BackupVolumeName my-codedx-backup -p my-codedx-project
 ```
 
 For more advanced usage of the backup script, such as setting the names of your tomcat and db containers if they're not the default, see the help info via the command:
 
-```bash
+```powershell
 get-help .\scripts\backup.ps1 -detailed
 ```
 
@@ -253,7 +258,7 @@ get-help .\scripts\backup.ps1 -detailed
 
 The preferred method for upgrading is by pulling the latest changes. While you're in the root of your docker-compose folder:
 
-```bash
+```powershell
 git pull
 ```
 
@@ -266,7 +271,7 @@ Note that pulling the latest files via git increases the likelihood that all doc
 In order for the latest Code Dx changes to be applied we'll have to restart our containers. First, we need to stop running containers. Replace the docker-compose.yml file in this command with the compose file you're using if it differs.
 
 **(Make sure not to use the -v switch for `down`, we want to keep our volumes)**
-```bash
+```powershell
 docker-compose -f docker-compose.yml down
 ```
 
@@ -274,7 +279,7 @@ docker-compose -f docker-compose.yml down
 
 After successfully upgrading, you can run the following command to see the effects of the upgrade:
 
-```bash
+```powershell
 docker-compose -f docker-compose.yml up
 ```
 
@@ -286,13 +291,18 @@ This can be done with the included `restore` script in your `codedx-docker/scrip
 
 Make sure your containers aren't running before running the script to avoid unexpected behavior.
 
-Assuming no defaults have been changed about the Code Dx docker-compose environment, the following command can be used:
-```bash
+Assuming no defaults have been changed about the Code Dx docker-compose environment:
+- If not using an external DB
+```powershell
 ./scripts/restore.ps1 -BackupVolumeName [backup-volume-name]
 ```
+- If using an external DB, specify the `UsingExternalDb` switch
+```powershell
+./scripts/restore.ps1 -BackupVolumeName [backup-volume-name] -UsingExternalDb
+```
 
-Otherwise, for specifying the updated values (such as project name, appdata volume name, etc.) you view these options with
-```bash
+Otherwise, if defaults were modified (e.g. project name, appdata volume) then refer to the script's help for specifying these values
+```powershell
 get-help .\scripts\restore.ps1 -detailed
 ```
 

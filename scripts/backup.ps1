@@ -47,4 +47,4 @@ Test-Script-Can-Run($TomcatContainerName, $DbContainerName)
 
 Write-Verbose "Creating Backup Volume $BackupVolumeName"
 New-Backup-Volume($BackupVolumeName)
-Write-Verbose "Successfuly created backup volume $BackupVolumeName"
+Write-Verbose "Successfully created backup volume $BackupVolumeName"
