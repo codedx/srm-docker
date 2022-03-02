@@ -292,13 +292,8 @@ This can be done with the included `restore` script in your `codedx-docker/scrip
 Make sure your containers aren't running before running the script to avoid unexpected behavior.
 
 Assuming no defaults have been changed about the Code Dx docker-compose environment:
-- If not using an external DB
 ```powershell
 ./scripts/restore.ps1 -BackupVolumeName [backup-volume-name]
-```
-- If using an external DB, specify the `UsingExternalDb` switch
-```powershell
-./scripts/restore.ps1 -BackupVolumeName [backup-volume-name] -UsingExternalDb
 ```
 
 Otherwise, if defaults were modified (e.g. project name, appdata volume) then refer to the script's help for specifying these values

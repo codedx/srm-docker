@@ -29,7 +29,7 @@ function Test-Script-Can-Run([string] $TomcatContainerName, [string] $DbContaine
     "$TomcatContainerName","$DbContainerName" | ForEach-Object {
 
         if (Test-RunningContainer $_) {
-            throw "Unable to continue because a backup cannot be created while the container $_ is running. The container can be stopped with the command: docker container stop $_"
+            throw "Unable to continue because a backup cannot be created while the container $_ is running. Either stop the container with 'docker container stop $_' or 'docker-compose down'"
         }
     }
 }
