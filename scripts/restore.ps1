@@ -104,10 +104,10 @@ if ($usingExternalDb) {
     }
 }
 
-Test-Script-Can-Run($TomcatContainerName, $DbContainerName)
+Test-Script-Can-Run $TomcatContainerName $DbContainerName
 
 Write-Verbose "Restoring Backup Volume $BackupVolumeName"
-Restore-Backup-Volume($BackupVolumeName)
+Restore-Backup-Volume $BackupVolumeName
 
 if ($LASTEXITCODE -eq 0) {
     Write-Verbose "Sucessfully restored backup volume $BackupVolumeName"

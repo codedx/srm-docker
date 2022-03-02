@@ -80,7 +80,19 @@ Set-PSDebug -Strict
 
 . $PSScriptRoot/common.ps1
 
+function Get-Backup-Confirmation([string] $BackupName) {
+    docker volume ls | grep $BackupName | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        $continueAnswer = Read-Host -Prompt "A backup volume with the name $BackupName already exists, continuing will overwrite this backup. Continue? (y/n)"
+        if ($continueAnswer.Equals("n") -or $continueAnswer.Equals("no") -or $continueAnswer.Equals("0")) {
+            Exit 0
+        }
+    }
+}
+
 function New-Backup-Volume([string] $BackupName) {
+    Get-Backup-Confirmation $BackupName
+
     Write-Verbose "Creating backup of appdata volume, $AppDataVolumeName"
     # Create backup of appdata. tar -C is used to set the location for the archive, by doing this we don't store parent directories containing
     # our desired folder. Instead, it's just the contents of the volume in the archive.
@@ -95,8 +107,8 @@ function New-Backup-Volume([string] $BackupName) {
     }
 }
 
-Test-Script-Can-Run($TomcatContainerName, $DbContainerName)
+Test-Script-Can-Run $TomcatContainerName $DbContainerName
 
 Write-Verbose "Creating Backup Volume $BackupVolumeName"
-New-Backup-Volume($BackupVolumeName)
+New-Backup-Volume $BackupVolumeName
 Write-Verbose "Successfully created backup volume $BackupVolumeName"

@@ -3,8 +3,7 @@ $AppDataArchiveName = "appdata-backup.tar"
 $DbDataArchiveName = "db-backup.tar"
 
 function Test-RunningContainer([string] $ContainerName) {
-
-	docker container ls | grep $ContainerName
+	docker container ls | grep $ContainerName | Out-Null
 	$LASTEXITCODE -eq 0
 }
 
@@ -27,7 +26,7 @@ function Test-Script-Can-Run([string] $TomcatContainerName, [string] $DbContaine
     }
 
     Write-Verbose 'Checking containers aren''t running...'
-    $TomcatContainerName,$DbContainerName | ForEach-Object {
+    "$TomcatContainerName","$DbContainerName" | ForEach-Object {
 
         if (Test-RunningContainer $_) {
             throw "Unable to continue because a backup cannot be created while the container $_ is running. The container can be stopped with the command: docker container stop $_"
