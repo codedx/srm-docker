@@ -89,17 +89,17 @@ function Restore-Backup-Volume([string] $BackupName) {
 
     Write-Verbose "Copying backup data from $BackupName to new volumes"
     if (!$UsingExternalDb) {
-        docker run --rm -v $AppDataVolumeName`:/appdata -v $DbDataVolumeName`:/dbdata -v $BackupName`:/backup ubuntu bash -c "cd /backup && tar -xvf $AppDataArchiveName --directory=/appdata && tar -xvf $DbDataArchiveName --directory=/dbdata"
+        docker run --rm -v $AppDataVolumeName`:/appdata -v $DbDataVolumeName`:/dbdata -v $BackupName`:/backup ubuntu bash -c "cd /backup && tar -xvf $AppDataArchiveName -C /appdata && tar -xvf $DbDataArchiveName -C /dbdata"
     }
     else {
-        docker run --rm -v $AppDataVolumeName`:/appdata -v $BackupName`:/backup ubuntu bash -c "cd /backup && tar -xvf $AppDataArchiveName --directory=/appdata"
+        docker run --rm -v $AppDataVolumeName`:/appdata -v $BackupName`:/backup ubuntu bash -c "cd /backup && tar -xvf $AppDataArchiveName -C /appdata"
     }
 }
 
 if ($usingExternalDb) {
     # So long as the user hasn't explicitly set the appdata volume name,
     # update appdata volume name to the default for external database configuration
-    if (!$AppDataVolumeName.Equals("$ProjectName`_codedx-appdata-volume")) {
+    if ($AppDataVolumeName.Equals("$ProjectName`_codedx-appdata-volume")) {
         $AppDataVolumeName = "$ProjectName`_codedx-appdata-ex-db-volume"
     }
 }
