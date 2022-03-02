@@ -196,25 +196,58 @@ After following the rest of each method's respective setup instructions, Code Dx
 
 ### Creating a Backup
 
-Before upgrading to the latest Code Dx version you may wish to create a backup of your Code Dx docker-compose environment. This can be done by running the following command while you're in the `codedx-docker` folder.
+Before upgrading to the latest Code Dx version you may wish to create a backup of your Code Dx docker-compose environment. This can be done with the included `backup` script in your `codedx-docker/scripts` folder. Make sure you have PowerShell Core installed, if not, downloads can be found [here](https://github.com/PowerShell/PowerShell#get-powershell).
 
+While in the root of the `codedx-docker` folder, stop your containers with the following command before creating the backup to avoid storing incomplete data
 ```bash
-./scripts/backup [name]
+docker-compose -f docker-compose.yml down
 ```
 
-This will create a backup of the following under a volume with the given `name`:
+Once the containers are stopped, a backup can be created like so:
+```bash
+./scripts/backup.ps1 -BackupVolumeName my-codedx-backup
+```
+
+This will create a backup of the following under the named volume `my-codedx-backup`:
 
 - The database of the `codedx-mariadb` container
-    - If using a remote Code Dx database instance this step will be skipped. A backup of the external database should be created in this case.
-- The codedx appdata contained in the `codedx-appdata` volume
+    - If using a remote Code Dx database instance this step will be skipped. Steps should be taken to create a backup of the external database instead.
+- The codedx appdata used by the `codedx-tomcat` container
 
 You should see the following output when the backup has been successfully created:
 
 ```
-Backup Successfully Created!
+Successfuly created backup volume <backup-volume-name>
 ```
 
 Note that if you plan on keeping around backups after an upgrade, be cautious of commands such as `docker volume prune`. This backup volume is not attached to a container and would be deleted.
+
+### Considerations When Using Multiple Directories
+
+If you're using multiple folders for your Code Dx docker-compose install (e.g. a docker-compose folder for each version of Code Dx) and want to use the same volumes across all of them you should specify the project name `-p` option on relevant docker commands such as `docker-compose up`.
+
+When creating named volumes docker-compose will prepend the project name, which is the current directory name by default, to the volume name. Meaning if you have a docker-compose install under the folder `codedx-docker` and another under `codedx-docker-2` their volume names will be distinct and contain different data. Without specifying the `-p` option the following two named volumes would exist:
+
+- `codedx-docker_codedx-appdata-volume`
+- `codedx-docker-2_codedx-appdata-volume`
+
+Named volumes are created when doing `docker-compose up`, so if there's a specific name you would like your different installs to share you should specify the project name the first time you execute this command, like so:
+
+```bash
+docker-compose -p codedx up
+```
+
+Since the backup script works with these volumes it's important to specify the project name on your backup command if it differs from the default name `codedx-docker`. You can specify it like so:
+
+```bash
+./scripts/backup.ps1 -BackupVolumeName my-codedx-backup -p my-codedx-project
+```
+
+For more advanced usage of the backup script, such as setting the names of your tomcat and db containers if they're not the default, see the help info via the command:
+
+```bash
+get-help .\scripts\backup.ps1 -detailed
+```
 
 ### Upgrading to the Latest Code Dx Version
 
@@ -228,6 +261,8 @@ If your docker-compose environment already has the latest changes you'll see out
 
 Alternatively, you can download the ZIP representing the latest codedx-docker update. **Note that if you're using the ZIP to replace an existing folder, any changes you made in the docker-compose root folder (such as the docker-compose file) will be overwritten unless you carry over your changes to the new docker-compose folder.** This merge process will be done for you if you use the `git` approach above. The ZIP can be downloaded here: https://github.com/codedx/codedx-docker/archive/refs/heads/master.zip
 
+Note that pulling the latest files via git increases the likelihood that all docker-compose commands run from the same directory and it's less likely to come across unexpected behavior due to [how docker-compose sets project names](#Considerations-When-Using-Multiple-Directories).
+
 In order for the latest Code Dx changes to be applied we'll have to restart our containers. First, we need to stop running containers. Replace the docker-compose.yml file in this command with the compose file you're using if it differs.
 
 **(Make sure not to use the -v switch for `down`, we want to keep our volumes)**
@@ -237,43 +272,32 @@ docker-compose -f docker-compose.yml down
 
 ### Running Code Dx After Upgrade
 
-#### Considerations When Using Multiple Directories
-
-If you're using multiple folders for your Code Dx docker-compose install (e.g. a docker-compose folder for each version of Code Dx) and want to use the same volumes across all of them you should specify the project name `-p` option on relevant docker commands such as `docker-compose up`.
-
-When creating named volumes docker-compose will prepend the project name, which is the current directory name by default, to the volume name. Meaning if you have a docker-compose install under the folder `codedx-docker` and another under `codedx-docker-2` their volume names will be distinct and contain different data. Without specifying the `-p` option the following two named volumes would exist:
-
-- `codedx-docker_codedx-appdata-volume`
-- `codedx-docker-2_codedx-appdata-volume`
-
-Named volumes are created when doing `docker up`, so if there's a specific name you would like your different installs to share you should specify the project name the first time you execute this command, like so:
-
-```bash
-docker-compose -p codedx up
-```
-
-Note that pulling the latest files via git increases the likelihood that all docker-compose commands run from the same directory.
-
-#### Running Code Dx
-
 After successfully upgrading, you can run the following command to see the effects of the upgrade:
 
 ```bash
-docker-compose -f docker-compose.yml -p <project-name> up
+docker-compose -f docker-compose.yml up
 ```
 
 ### Restoring from Backup
 
 In the event that an upgrade has gone wrong or existing Code Dx Data has been corrupted/deleted, you may restore from a [previously created backup](#Creating-a-Backup).
 
-With the following program you can restore Code Dx data with a volume name you specificed when creating the backup. If you simply wish to restore to the most recent saved state you can omit `[backup-volume-name]`
+This can be done with the included `restore` script in your `codedx-docker/scripts` folder. This will restore Code Dx data from a provided backup volume name which was specified when creating the backup.
 
+Make sure your containers aren't running before running the script to avoid unexpected behavior.
+
+Assuming no defaults have been changed about the Code Dx docker-compose environment, the following command can be used:
 ```bash
-./scripts/restore [backup-volume-name]
+./scripts/restore.ps1 -BackupVolumeName [backup-volume-name]
 ```
 
-You should see
+Otherwise, for specifying the updated values (such as project name, appdata volume name, etc.) you view these options with
+```bash
+get-help .\scripts\restore.ps1 -detailed
+```
+
+After running the command, you should see
 
 ```
-Successfully restored from <backup-volume-name> backup!
+Sucessfully restored backup volume <backup-volume-name>
 ```

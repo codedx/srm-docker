@@ -13,13 +13,13 @@ restoring the database will not be automated as part of this script.
 
 param (
         [Alias('p')]
-        [string] $projectName = 'codedx-docker',
-		[switch] $usingExternalDb,
-		[string] $appDataVolumeName = "$projectName`_codedx-appdata-volume",
-        [string] $dbDataVolumeName = "$projectName`_codedx-database-volume",
-        [string] $tomcatContainerName = "$projectName`_codedx-tomcat_1",
-        [string] $dbContainerName = "$projectName`_codedx-db_1",
-        [string] $backupVolumeName
+        [string] $ProjectName = 'codedx-docker',
+		[switch] $UsingExternalDb,
+		[string] $AppDataVolumeName = "$ProjectName`_codedx-appdata-volume",
+        [string] $DbDataVolumeName = "$ProjectName`_codedx-database-volume",
+        [string] $TomcatContainerName = "$ProjectName`_codedx-tomcat_1",
+        [string] $DbContainerName = "$ProjectName`_codedx-db_1",
+        [string] $BackupVolumeName
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,65 +27,35 @@ $VerbosePreference = 'Continue'
 
 Set-PSDebug -Strict
 
-$appDataArchiveName = "appdata-backup.tar"
-$dbDataArchiveName = "db-backup.tar"
+. $PSScriptRoot/common.ps1
 
-function Test-RunningContainer([string] $containerName) {
-
-	docker container ls | grep $containerName
-	$LASTEXITCODE -eq 0
-}
-
-function Test-AppCommandPath([string] $commandName) {
-
-	$command = Get-Command $commandName -Type Application -ErrorAction SilentlyContinue
-	if ($null -eq $command) {
-		return $null
-	}
-	$command.Path
-}
-
-function Restore-Backup-Volume([string] $backupName) {
-    Write-Verbose "Removing volume $appDataVolumeName"
-    docker volume rm $appDataVolumeName
-    Write-Verbose "Removing volume $dbDataVolumeName"
-    docker volume rm $dbDataVolumeName
-    Write-Verbose "Copying backup data from $backupVolumeName to new volumes"
-    if (!$usingExternalDb) {
-        docker run --rm -v $appDataVolumeName`:/appdata -v $dbDataVolumeName`:/dbdata -v $backupVolumeName`:/backup ubuntu bash -c "cd /backup && tar -xvf $appDataArchiveName --directory=/appdata --strip 1 && tar -xvf $dbDataArchiveName --directory=/dbdata"
+function Restore-Backup-Volume([string] $BackupName) {
+    Write-Verbose "Removing volume $AppDataVolumeName"
+    docker volume rm $AppDataVolumeName
+    Write-Verbose "Removing volume $DbDataVolumeName"
+    docker volume rm $DbDataVolumeName
+    Write-Verbose "Copying backup data from $BackupName to new volumes"
+    if (!$UsingExternalDb) {
+        docker run --rm -v $AppDataVolumeName`:/appdata -v $DbDataVolumeName`:/dbdata -v $BackupName`:/backup ubuntu bash -c "cd /backup && tar -xvf $AppDataArchiveName --directory=/appdata && tar -xvf $DbDataArchiveName --directory=/dbdata"
     }
     else {
-        docker run --rm -v $appDataVolumeName`:/appdata -v $backupVolumeName`:/backup ubuntu bash -c "cd /backup && tar -xvf $appDataArchiveName --directory=/appdata"
+        docker run --rm -v $AppDataVolumeName`:/appdata -v $BackupName`:/backup ubuntu bash -c "cd /backup && tar -xvf $AppDataArchiveName --directory=/appdata"
     }
 }
 
 if ($usingExternalDb) {
     # So long as the user hasn't explicitly set the appdata volume name,
     # update appdata volume name to the default for external database configuration
-    if (!$appDataVolumeName.Equals("$projectName`_codedx-appdata-volume")) {
-        $appDataVolumeName = "$projectName`_codedx-appdata-ex-db-volume"
+    if (!$AppDataVolumeName.Equals("$ProjectName`_codedx-appdata-volume")) {
+        $AppDataVolumeName = "$ProjectName`_codedx-appdata-ex-db-volume"
     }
 }
 
-Write-Verbose 'Checking PATH prerequisites...'
-'docker','docker-compose' | ForEach-Object {
+Test-Script-Can-Run($TomcatContainerName, $DbContainerName)
 
-	if (-not (Test-AppCommandPath $_)) {
-		throw "Unable to continue because $_ could not be found. Is $_ installed and included in your PATH?"
-	}
-}
-
-Write-Verbose 'Checking containers aren''t running...'
-$tomcatContainerName,$dbContainerName | ForEach-Object {
-
-	if (Test-RunningContainer $_) {
-		throw "Unable to continue because a backup cannot be created while the container $_ is running. The container can be stopped with the command: docker container stop $_"
-	}
-}
-
-Write-Verbose "Restoring Backup Volume $backupVolumeName"
-Restore-Backup-Volume($backupVolumeName)
+Write-Verbose "Restoring Backup Volume $BackupVolumeName"
+Restore-Backup-Volume($BackupVolumeName)
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Verbose "Restoring Backup Volume $backupVolumeName successful"
+    Write-Verbose "Sucessfully restored backup volume $BackupVolumeName"
 }
