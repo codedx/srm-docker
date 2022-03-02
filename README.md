@@ -251,7 +251,7 @@ Since the backup script works with these volumes it's important to specify the p
 For more advanced usage of the backup script, such as setting the names of your tomcat and db containers if they're not the default, see the help info via the command:
 
 ```powershell
-get-help .\scripts\backup.ps1 -detailed
+get-help .\scripts\backup.ps1 -full
 ```
 
 ### Upgrading to the Latest Code Dx Version
@@ -283,7 +283,7 @@ After successfully upgrading, you can run the following command to see the effec
 docker-compose -f docker-compose.yml up
 ```
 
-### Restoring from Backup
+### Restoring From a Backup
 
 In the event that an upgrade has gone wrong or existing Code Dx Data has been corrupted/deleted, you may restore from a [previously created backup](#Creating-a-Backup).
 
@@ -303,7 +303,7 @@ Assuming no defaults have been changed about the Code Dx docker-compose environm
 
 Otherwise, if defaults were modified (e.g. project name, appdata volume) then refer to the script's help for specifying these values
 ```powershell
-get-help .\scripts\restore.ps1 -detailed
+get-help .\scripts\restore.ps1 -full
 ```
 
 After running the command, you should see
