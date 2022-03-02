@@ -17,11 +17,33 @@ param (
 		[switch] $usingExternalDb,
 		[string] $appDataVolumeName = "$projectName`_codedx-appdata-volume",
         [string] $dbDataVolumeName = "$projectName`_codedx-database-volume",
+        [string] $tomcatContainerName = "$projectName`_codedx-tomcat_1",
+        [string] $dbContainerName = "$projectName`_codedx-db_1",
         [string] $backupVolumeName
 )
 
+$ErrorActionPreference = 'Stop'
+$VerbosePreference = 'Continue'
+
+Set-PSDebug -Strict
+
 $appDataArchiveName = "appdata-backup.tar"
 $dbDataArchiveName = "db-backup.tar"
+
+function Test-RunningContainer([string] $containerName) {
+
+	docker container ls | grep $containerName
+	$LASTEXITCODE -eq 0
+}
+
+function Test-AppCommandPath([string] $commandName) {
+
+	$command = Get-Command $commandName -Type Application -ErrorAction SilentlyContinue
+	if ($null -eq $command) {
+		return $null
+	}
+	$command.Path
+}
 
 function Restore-Backup-Volume([string] $backupName) {
     Write-Verbose "Removing volume $appDataVolumeName"
@@ -43,6 +65,22 @@ if ($usingExternalDb) {
     if (!$appDataVolumeName.Equals("$projectName`_codedx-appdata-volume")) {
         $appDataVolumeName = "$projectName`_codedx-appdata-ex-db-volume"
     }
+}
+
+Write-Verbose 'Checking PATH prerequisites...'
+'docker','docker-compose' | ForEach-Object {
+
+	if (-not (Test-AppCommandPath $_)) {
+		throw "Unable to continue because $_ could not be found. Is $_ installed and included in your PATH?"
+	}
+}
+
+Write-Verbose 'Checking containers aren''t running...'
+$tomcatContainerName,$dbContainerName | ForEach-Object {
+
+	if (Test-RunningContainer $_) {
+		throw "Unable to continue because a backup cannot be created while the container $_ is running. The container can be stopped with the command: docker container stop $_"
+	}
 }
 
 Write-Verbose "Restoring Backup Volume $backupVolumeName"

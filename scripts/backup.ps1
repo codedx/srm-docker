@@ -11,25 +11,27 @@ install. These backups can then be used by a restore script.
 #>
 
 param (
-		[string] $tomcatContainerName = 'codedx-docker_codedx-tomcat_1',
-		[string] $dbContainerName = 'codedx-docker_codedx-db_1',
-		[string] $appDataPath = '/opt/codedx',
-        [string] $dbDataPath = '/bitnami/mariadb',
-        [string] $backupVolumeName,
-        [switch] $usingExternalDb
+        [Alias('p')]
+        [string] $projectName = 'codedx-docker',
+		[switch] $usingExternalDb,
+		[string] $appDataVolumeName = "$projectName`_codedx-appdata-volume",
+        [string] $dbDataVolumeName = "$projectName`_codedx-database-volume",
+        [string] $tomcatContainerName = "$projectName`_codedx-tomcat_1",
+        [string] $dbContainerName = "$projectName`_codedx-db_1",
+        [string] $backupVolumeName
 )
 
 $ErrorActionPreference = 'Stop'
 $VerbosePreference = 'Continue'
 
+Set-PSDebug -Strict
+
 $appDataArchiveName = "appdata-backup.tar"
 $dbDataArchiveName = "db-backup.tar"
 
-Set-PSDebug -Strict
-
 function Test-RunningContainer([string] $containerName) {
 
-	docker exec $containerName echo $containerName
+	docker container ls | grep $containerName
 	$LASTEXITCODE -eq 0
 }
 
@@ -43,14 +45,14 @@ function Test-AppCommandPath([string] $commandName) {
 }
 
 function New-Backup-Volume([string] $backupName) {
-    Write-Verbose "Creating backup of appdata at $tomcatContainerName`:$appDataPath"
+    Write-Verbose "Creating backup of appdata volume, $appDataVolumeName"
     # Create backup of appdata. tar -C is used to set the location for the archive, by doing this we don't store parent directories containing
-    # our desired folder. Instead, it's just the contents of $appDataPath in the archive.
-    docker run --rm --volumes-from $tomcatContainerName -v $backupName`:/backup ubuntu tar -C $appDataPath -cvf /backup/$appDataArchiveName .
+    # our desired folder. Instead, it's just the contents of the volume in the archive.
+    docker run --rm -v $backupName`:/backup -v $appDataVolumeName`:/appdata ubuntu tar -C /appdata -cvf /backup/$appDataArchiveName .
     # Create backup of DB if in use, where an empty value for `dbContainerName` indicates they're using an external DB
     if (!$usingExternalDb) {
-        Write-Verbose "Creating backup of DB at $dbContainerName`:$dbDataPath"
-        docker run --rm --volumes-from $dbContainerName -v $backupName`:/backup ubuntu tar -C $dbDataPath -cvf /backup/$dbDataArchiveName .
+        Write-Verbose "Creating backup of DB volume, $dbDataVolumeName"
+        docker run --rm -v $backupName`:/backup -v $dbDataVolumeName`:/dbdata ubuntu tar -C /dbdata -cvf /backup/$dbDataArchiveName .
     }
     else {
         Write-Verbose 'Skipping backing up database due to -usingExternalDb being true'
@@ -65,11 +67,11 @@ Write-Verbose 'Checking PATH prerequisites...'
 	}
 }
 
-Write-Verbose 'Checking running containers...'
+Write-Verbose 'Checking containers aren''t running...'
 $tomcatContainerName,$dbContainerName | ForEach-Object {
 
-	if (-not (Test-RunningContainer $_)) {
-		throw "Unable to continue because a running container named $_ could not be found. Is Code Dx running with Docker Compose and did you specify the correct script parameters (-tomcatContainerName and -dbContainerName)?"
+	if (Test-RunningContainer $_) {
+		throw "Unable to continue because a backup cannot be created while the container $_ is running. The container can be stopped with the command: docker container stop $_"
 	}
 }
 
