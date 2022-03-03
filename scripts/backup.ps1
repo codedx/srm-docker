@@ -107,7 +107,6 @@ function Test-Volume-Is-AppData([string] $VolumeName) {
         else
             echo 0
         fi"
-        echo $Result
         $Result
     }
     else {

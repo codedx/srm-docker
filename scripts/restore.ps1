@@ -72,14 +72,14 @@ Set-PSDebug -Strict
 . $PSScriptRoot/common.ps1
 
 function Test-Backup-Has-Archive([string] $BackupName, [string] $ArchiveName) {
-    [string]$Result = docker run --rm -v $BackupName`:/backup ubuntu bash -c "
+    [bool]$Result = docker run --rm -v $BackupName`:/backup ubuntu bash -c "
     cd /backup &&
     if [ -f $ArchiveName ]; then
         echo 1
     else
         echo 0
     fi"
-    $Result -eq 1
+    $Result
 }
 
 function Test-Volume-Is-Backup([string] $VolumeName) {
