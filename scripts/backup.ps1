@@ -97,6 +97,40 @@ function Get-Backup-Confirmation([string] $BackupName) {
     }
 }
 
+function Test-Volume-Is-AppData([string] $VolumeName) {
+    if (Test-Volume-Exists $VolumeName) {
+        [bool]$Result = docker run --rm -v $VolumeName`:/appdata ubuntu bash -c "
+        cd /appdata &&
+        ls &&
+        if [ -f codedx.props ] && [ -f logback.xml ]; then
+            echo 1
+        else
+            echo 0
+        fi"
+        echo $Result
+        $Result
+    }
+    else {
+        $false
+    }
+}
+
+function Test-Volume-Is-Database([string] $VolumeName) {
+    if (Test-Volume-Exists $VolumeName) {
+        [bool]$Result = docker run --rm -v $VolumeName`:/db ubuntu bash -c "
+        cd /db &&
+        if [ -d 'data' ] && [ -d 'data/mysql' ]; then
+            echo 1
+        else
+            echo 0
+        fi"
+        $Result
+    }
+    else {
+        $false
+    }
+}
+
 function New-Backup-Volume([string] $BackupName) {
     $OverwriteBackup = Get-Backup-Confirmation $BackupName
 
@@ -115,11 +149,22 @@ function New-Backup-Volume([string] $BackupName) {
         docker run --rm -v $BackupName`:/backup -v $DbDataVolumeName`:/dbdata ubuntu tar -C /dbdata -cvf /backup/$DbDataArchiveName .
     }
     else {
-        Write-Verbose 'Skipping backing up database due to -usingExternalDb being true'
+        Write-Verbose 'Skipping backing up database due to -UsingExternalDb being true'
     }
 }
 
 Test-Script-Can-Run $TomcatContainerName $DbContainerName
+
+Write-Verbose "Checking $AppDataVolumeName is a valid Code Dx appdata volume"
+if (-not (Test-Volume-Is-AppData $AppDataVolumeName)) {
+    throw "The provided appdata volume $AppDataVolumeName does not appear to be Code Dx appdata. Example missing files include codedx.props and logback.xml."
+}
+if (!$UsingExternalDb) {
+    Write-Verbose "Checking $DbDataVolumeName is a valid Code Dx database volume"
+    if (-not (Test-Volume-Is-Database $DbDataVolumeName)) {
+        throw "The provided database volume $DbDataVolumeName does not appear to be a Code Dx database. Failed to locate system databases such as mysql."
+    }
+}
 
 Write-Verbose "Creating Backup Volume $BackupVolumeName..."
 New-Backup-Volume $BackupVolumeName

@@ -16,6 +16,11 @@ function Test-AppCommandPath([string] $CommandName) {
 	$Command.Path
 }
 
+function Test-Volume-Exists([string] $VolumeName) {
+    docker volume ls | grep $VolumeName >$null
+    $LASTEXITCODE -eq 0
+}
+
 function Test-Script-Can-Run([string] $TomcatContainerName, [string] $DbContainerName) {
     Write-Verbose 'Checking PATH prerequisites...'
     'docker','docker-compose' | ForEach-Object {
