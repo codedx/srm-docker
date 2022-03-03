@@ -256,6 +256,8 @@ get-help .\scripts\backup.ps1 -full
 
 ### Upgrading to the Latest Code Dx Version
 
+As a final step before upgrading, any desired changes to your docker-compose configuration (such as alternate port number) should be taken. Having these changes in place before the upgrade allows for git to point out possible conflicts which you'll be able to resolve.
+
 The preferred method for upgrading is by pulling the latest changes. While you're in the root of your docker-compose folder:
 
 ```powershell
