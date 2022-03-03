@@ -81,8 +81,7 @@ Set-PSDebug -Strict
 . $PSScriptRoot/common.ps1
 
 function Get-Backup-Confirmation([string] $BackupName) {
-    docker volume ls | grep $BackupName | Out-Null
-    if ($LASTEXITCODE -eq 0) {
+    if (Test-Volume-Exists $BackupName) {
         $continueAnswer = Read-Host -Prompt "A backup volume with the name $BackupName already exists, continuing will overwrite this backup. Continue? (y/n)"
         # Do a case insensitive string equality check to see if the user wants to proceed else exit
         if (-not ($continueAnswer -ieq "y" -or $continueAnswer -ieq "yes")) {
