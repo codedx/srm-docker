@@ -115,7 +115,7 @@ pipeline {
 					}
 				}
 
-				stage('Get Code Dx Version') {
+				stage('Get Versions') {
 
 					steps {
 
@@ -124,18 +124,29 @@ pipeline {
 							withCredentials([
 								usernamePassword(credentialsId: 'codedx-build-github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN'),
 								string(credentialsId: 'codedxownername', variable: 'GIT_OWNER'),
-								string(credentialsId: 'codedxreponame',  variable: 'GIT_REPO')]) {
+								string(credentialsId: 'codedxreponame',  variable: 'GIT_CODEDX_REPO'),
+								string(credentialsId: 'mariadbreponame', variable: 'GIT_MARIADB_REPO')
+								]) {
 
 								script {
 
-									codeDxVersion = getLatestGitHubRelease(GIT_TOKEN, GIT_OWNER, GIT_REPO)
-									if (codeDxVersion == '') {
-										error('unable to continue because the latest version of Code Dx cannot be found')
+									currentVersions = []
+									[GIT_CODEDX_REPO,GIT_MARIADB_REPO].each { x ->
+
+										currentVersion = getLatestGitHubRelease(GIT_TOKEN, GIT_OWNER, x)
+										if (currentVersion == '') {
+											error("unable to continue because the latest version from repo $x cannot be found")
+										}
+										currentVersions += currentVersion
 									}
 
-									hasCodeDxVersion = sh(returnStdout: true, script: "pwsh -command \"& select-string -path ./docker-compose.yml -Pattern 'image:\\scodedx/codedx-tomcat:$codeDxVersion' -Quiet\"")
-									if (hasCodeDxVersion.toBoolean()) {
-										error("unable to continue because the repository already references the latest Code Dx version ($codeDxVersion)")
+									codeDxVersion             = currentVersions[0]
+									mariaDBVersion            = currentVersions[1]
+
+									def isCurrentVersion = sh(returnStdout: true, script: "pwsh -command \"&{ . ./.version/common.ps1; Test-CodeDxVersion './docker-compose.yml' '$codeDxVersion' '$mariaDBVersion' }\"")
+
+									if (isCurrentVersion.toBoolean()) {
+										error("unable to continue because the repository already references the latest versions; codeDxVersion=$codeDxVersion; mariaDBVersion=$mariaDBVersion;")
 									}
 								}
 							}
@@ -156,7 +167,7 @@ pipeline {
 								timeout(time: 15) {
 
 									// pipeline not triggered by SCM and input response should occur with minimal delay, so invoke input in this stage (leaving container running)
-									input message: "Continue with latest Code Dx version ($codeDxVersion)?"
+									input message: "Continue with latest Code Dx version ($codeDxVersion) and MariaDB version ($mariaDBVersion)?"
 								}
 							} catch (err) {
 
@@ -179,9 +190,9 @@ pipeline {
 
 							sh 'git config user.name \'Code Dx Build\' && git config user.email support@codedx.com'
 							sh "git checkout ${scm.branches[0]}"
-							sh "pwsh ./.version/version.ps1 $codeDxVersion"
+							sh "pwsh ./.version/version.ps1 '$codeDxVersion' '$mariaDBVersion'"
 							sh 'git add .'
-							sh "git commit -m 'feat: update to $codeDxVersion'"
+							sh "git commit -m 'feat: update to $codeDxVersion and $mariaDBVersion'"
 
 							withCredentials([usernamePassword(credentialsId: 'codedx-build-github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]){
 

@@ -17,7 +17,7 @@ services:
         image: codedx/codedx-mariadb:v1.1.1
         environment:
             MARIADB_ROOT_PASSWORD: "root"
-            MARIADB_DATABASE: "codedx"
+            MARIADB_DATABASE: "codedx" # a password with a single quote is unsupported
             MARIADB_EXTRA_FLAGS: "--optimizer_search_depth=0 --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --lower_case_table_names=1"
         volumes:
             - codedx-database-volume:/bitnami/mariadb
