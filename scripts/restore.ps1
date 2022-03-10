@@ -118,7 +118,7 @@ if (-not (Test-Volume-Is-Backup $BackupVolumeName)) {
 }
 
 # If the volume is missing the archive file, then it was likely created with the external db flag
-$UsingExternalDb = Test-Backup-Has-Archive $BackupVolumeName $DbDataArchiveName
+$UsingExternalDb = !(Test-Backup-Has-Archive $BackupVolumeName $DbDataArchiveName)
 
 if ($UsingExternalDb) {
     # So long as the user hasn't explicitly set the appdata volume name,
