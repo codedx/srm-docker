@@ -1,6 +1,6 @@
 <#PSScriptInfo
 .VERSION 1.0.0
-.GUID a56b7e15-a300-4da7-85b6-8c3bdff8d897
+.GUID d6b73bb9-7106-4f53-b992-3cf4d98c4746
 .AUTHOR Code Dx
 #>
 
@@ -58,8 +58,12 @@ param (
         [string] $ProjectName = 'codedx-docker',
         [string] $AppDataVolumeName = "$ProjectName`_codedx-appdata-volume",
         [string] $DbDataVolumeName = "$ProjectName`_codedx-database-volume",
-        [string] $TomcatContainerName = "$ProjectName`_codedx-tomcat_1",
-        [string] $DbContainerName = "$ProjectName`_codedx-db_1",
+        [string] $CodeDxTomcatServiceName = "codedx-tomcat",
+        [string] $CodeDxDbServiceName = "codedx-db",
+        [string] $TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1",
+        [string] $DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1",
+        [string] $ComposeConfigPath = $(Resolve-Path "$PSScriptRoot\..\docker-compose.yml").Path,
+        [string] $BashCapableImage,
         [Parameter(Mandatory=$true)]
         [string] $BackupVolumeName
 )
@@ -71,54 +75,76 @@ Set-PSDebug -Strict
 
 . $PSScriptRoot/common.ps1
 
-function Test-Backup-Has-Archive([string] $BackupName, [string] $ArchiveName) {
-    [bool]$Result = docker run --rm -v $BackupName`:/backup ubuntu bash -c "
+
+$BashCapableImage = $BashCapableImage ? $BashCapableImage : (Get-TomcatImage $ComposeConfigPath)
+
+function Test-Archive([string] $BackupName, [string] $ArchiveName) {
+    [bool]$Result = docker run -u 0 --rm -v "$BackupName`:/backup" $BashCapableImage bash -c "
     cd /backup &&
     if [ -f $ArchiveName ]; then
         echo 1
     else
         echo 0
     fi"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to test existence of the archive $ArchiveName in $BackupName"
+    }
     $Result
 }
 
-function Test-Volume-Is-Backup([string] $VolumeName) {
-    (Test-Backup-Has-Archive $VolumeName $AppDataArchiveName) -or (Test-Backup-Has-Archive $VolumeName $DbDataVolumeName)
+# If the volume is missing the archive file, then it was likely created with the external db flag
+$UsingExternalDb = !(Test-Archive $BackupVolumeName $DbDataArchiveName)
+
+function Test-BackupVolume([string] $VolumeName) {
+    (Test-Archive $VolumeName $AppDataArchiveName) -or (Test-Archive $VolumeName $DbDataVolumeName)
 }
 
-function Restore-Backup-Volume([string] $BackupName, [bool] $UsingExternalDb) {
+function Restore-BackupVolume([string] $BackupName, [bool] $UsingExternalDb) {
     Write-Verbose "Removing volume $AppDataVolumeName..."
     # Check if the volume exists before deleting it. It's possible a user accidently did `docker-compose down -v` and deleted
     # the associated volumes and is trying to run the restore script. Trying to remove a non-existent volume will be an error.
-    (Test-Volume-Exists $AppDataVolumeName) -and (docker volume rm $AppDataVolumeName) >$null
+    (Test-VolumeExists $AppDataVolumeName) -and (docker volume rm $AppDataVolumeName) | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to remove volume $AppDataVolumeName"
+    }
 
     if (!$UsingExternalDb) {
         Write-Verbose "Removing volume $DbDataVolumeName..."
-        (Test-Volume-Exists $DbDataVolumeName) -and (docker volume rm $DbDataVolumeName) >$null
+        (Test-VolumeExists $DbDataVolumeName) -and (docker volume rm $DbDataVolumeName) | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to remove volume $DbDataVolumeName"
+        }
 
         Write-Verbose "Copying backup data from $BackupName to volumes $AppDataVolumeName, $DbDataVolumeName..."
-        docker run --rm -v $AppDataVolumeName`:/appdata -v $DbDataVolumeName`:/dbdata -v $BackupName`:/backup ubuntu bash -c "cd /backup && tar -xvf $AppDataArchiveName -C /appdata && tar -xvf $DbDataArchiveName -C /dbdata"
+        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$DbDataVolumeName`:/dbdata" -v "$BackupName`:/backup" $BashCapableImage bash -c "
+            cd /backup &&
+            tar -C /appdata -xvf $AppDataArchiveName &&
+            tar -C /dbdata -xvf $DbDataArchiveName"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to restore volumes $AppDataVolumeName, $DbDataVolumeName"
+        }
     }
     else {
         Write-Verbose "Copying backup data from $BackupName to volume $AppDataVolumeName..."
-        docker run --rm -v $AppDataVolumeName`:/appdata -v $BackupName`:/backup ubuntu bash -c "cd /backup && tar -xvf $AppDataArchiveName -C /appdata"
-
+        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$BackupName`:/backup" $BashCapableImage bash -c "
+            cd /backup &&
+            tar -C /appdata -xvf $AppDataArchiveName"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to restore volume $AppDataVolumeName"
+        }
         Write-Verbose "Skipping restoring database due to there being no database archive file"
     }
 }
 
-Test-Script-Can-Run $TomcatContainerName $DbContainerName
+Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $BashCapableImage
 
 Write-Verbose "Checking $BackupVolumeName is a valid backup volume"
-if (-not (Test-Volume-Exists $BackupVolumeName)) {
+if (-not (Test-VolumeExists $BackupVolumeName)) {
     throw "The provided volume name $BackupVolumeName does not exist"
 }
-if (-not (Test-Volume-Is-Backup $BackupVolumeName)) {
+if (-not (Test-BackupVolume $BackupVolumeName)) {
     throw "The provided volume name $BackupVolumeName is not a backup generated by the bundled backup script. Neither $AppDataArchiveName or $DbDataArchiveName could be found."
 }
-
-# If the volume is missing the archive file, then it was likely created with the external db flag
-$UsingExternalDb = !(Test-Backup-Has-Archive $BackupVolumeName $DbDataArchiveName)
 
 if ($UsingExternalDb) {
     # So long as the user hasn't explicitly set the appdata volume name,
@@ -129,7 +155,7 @@ if ($UsingExternalDb) {
 }
 
 Write-Verbose "Restoring Backup Volume $BackupVolumeName..."
-Restore-Backup-Volume $BackupVolumeName $UsingExternalDb
+Restore-BackupVolume $BackupVolumeName $UsingExternalDb
 
 if ($LASTEXITCODE -eq 0) {
     Write-Verbose "Sucessfully restored backup volume $BackupVolumeName"

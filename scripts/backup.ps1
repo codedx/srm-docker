@@ -1,6 +1,6 @@
 <#PSScriptInfo
 .VERSION 1.0.0
-.GUID a56b7e15-a300-4da7-85b6-8c3bdff8d897
+.GUID 5eadc648-e218-48d9-b264-f96f01f81434
 .AUTHOR Code Dx
 #>
 
@@ -64,11 +64,15 @@ https://github.com/codedx/codedx-docker#creating-a-backup
 param (
         [Alias('p')]
         [string] $ProjectName = 'codedx-docker',
-        [switch] $UsingExternalDb,
         [string] $AppDataVolumeName = "$ProjectName`_codedx-appdata-volume",
         [string] $DbDataVolumeName = "$ProjectName`_codedx-database-volume",
-        [string] $TomcatContainerName = "$ProjectName`_codedx-tomcat_1",
-        [string] $DbContainerName = "$ProjectName`_codedx-db_1",
+        [string] $CodeDxTomcatServiceName = "codedx-tomcat",
+        [string] $CodeDxDbServiceName = "codedx-db",
+        [string] $TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1",
+        [string] $DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1",
+        [string] $ComposeConfigPath = $(Resolve-Path "$PSScriptRoot\..\docker-compose.yml").Path,
+        [string] $BashCapableImage,
+        [switch] $SkipConfirmation,
         [Parameter(Mandatory=$true)]
         [string] $BackupVolumeName
 )
@@ -80,12 +84,17 @@ Set-PSDebug -Strict
 
 . $PSScriptRoot/common.ps1
 
-function Get-Backup-Confirmation([string] $BackupName) {
-    if (Test-Volume-Exists $BackupName) {
-        $continueAnswer = Read-Host -Prompt "A backup volume with the name $BackupName already exists, continuing will overwrite this backup. Continue? (y/n)"
-        # Do a case insensitive string equality check to see if the user wants to proceed else exit
-        if (-not ($continueAnswer -ieq "y" -or $continueAnswer -ieq "yes")) {
-            Exit 0
+$BashCapableImage = $BashCapableImage ? $BashCapableImage : (Get-TomcatImage $ComposeConfigPath)
+$UsingExternalDb = Test-UsingExternalDb $ComposeConfigPath
+
+function Get-BackupConfirmation([string] $BackupName) {
+    if (Test-VolumeExists $BackupName) {
+        if (!$SkipConfirmation) {
+            $continueAnswer = Read-Host -Prompt "A backup volume with the name $BackupName already exists, continuing will overwrite this backup. Continue? (y/n)"
+            # Do a case insensitive string equality check to see if the user wants to proceed else exit
+            if (-not ($continueAnswer -ieq "y" -or $continueAnswer -ieq "yes")) {
+                Exit 0
+            }
         }
         # Indicates the user has chosen to overwrite an existing backup
         1
@@ -96,9 +105,9 @@ function Get-Backup-Confirmation([string] $BackupName) {
     }
 }
 
-function Test-Volume-Is-AppData([string] $VolumeName) {
-    if (Test-Volume-Exists $VolumeName) {
-        [bool]$Result = docker run --rm -v $VolumeName`:/appdata ubuntu bash -c "
+function Test-VolumeAppData([string] $VolumeName) {
+    if (Test-VolumeExists $VolumeName) {
+        [bool] $Result = docker run -u 0 --rm -v "$VolumeName`:/appdata" $BashCapableImage bash -c "
         cd /appdata &&
         ls &&
         if [ -f codedx.props ] && [ -f logback.xml ]; then
@@ -106,6 +115,9 @@ function Test-Volume-Is-AppData([string] $VolumeName) {
         else
             echo 0
         fi"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to test the existence of appdata in $VolumeName"
+        }
         $Result
     }
     else {
@@ -113,15 +125,18 @@ function Test-Volume-Is-AppData([string] $VolumeName) {
     }
 }
 
-function Test-Volume-Is-Database([string] $VolumeName) {
-    if (Test-Volume-Exists $VolumeName) {
-        [bool]$Result = docker run --rm -v $VolumeName`:/db ubuntu bash -c "
+function Test-VolumeDatabase([string] $VolumeName) {
+    if (Test-VolumeExists $VolumeName) {
+        [bool]$Result = docker run -u 0 --rm -v "$VolumeName`:/db" $BashCapableImage bash -c "
         cd /db &&
         if [ -d 'data' ] && [ -d 'data/mysql' ]; then
             echo 1
         else
             echo 0
         fi"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to test the existence of database data in $VolumeName"
+        }
         $Result
     }
     else {
@@ -129,41 +144,53 @@ function Test-Volume-Is-Database([string] $VolumeName) {
     }
 }
 
-function New-Backup-Volume([string] $BackupName) {
-    $OverwriteBackup = Get-Backup-Confirmation $BackupName
+function New-BackupVolume([string] $BackupName) {
+    $OverwriteBackup = Get-BackupConfirmation $BackupName
 
     if ($OverwriteBackup) {
         Write-Verbose "User has chosen to overwrite existing backup volume $BackupName, overwriting..."
-        docker run --rm -v $BackupName`:/backup ubuntu bash -c "rm /backup/*.tar"
+        docker run -u 0 --rm -v "$BackupName`:/backup" $BashCapableImage bash -c "rm -f /backup/*.tar"
+        if ($LASTEXITCODE -ne 0) {
+			throw "Unable to delete contents of $BackupName for overwrite"
+		}
     }
 
     Write-Verbose "Creating backup of appdata volume, $AppDataVolumeName..."
     # Create backup of appdata. tar -C is used to set the location for the archive, by doing this we don't store parent directories containing
     # our desired folder. Instead, it's just the contents of the volume in the archive.
-    docker run --rm -v $BackupName`:/backup -v $AppDataVolumeName`:/appdata ubuntu tar -C /appdata -cvf /backup/$AppDataArchiveName .
+    docker run -u 0 --rm -v "$BackupName`:/backup" -v "$AppDataVolumeName`:/appdata" $BashCapableImage bash -c "tar -C /appdata -cvzf /backup/$AppDataArchiveName ."
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to backup appdata volume $AppDataVolumeName"
+    }
     # Create backup of DB if it's being used according to the -UsingExternalDb switch
     if (!$UsingExternalDb) {
         Write-Verbose "Creating backup of DB volume, $DbDataVolumeName..."
-        docker run --rm -v $BackupName`:/backup -v $DbDataVolumeName`:/dbdata ubuntu tar -C /dbdata -cvf /backup/$DbDataArchiveName .
+        docker run -u 0 --rm -v "$BackupName`:/backup" -v "$DbDataVolumeName`:/dbdata" $BashCapableImage bash -c "tar -C /dbdata -cvzf /backup/$DbDataArchiveName ."
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to backup database volume $AppDataVolumeName"
+        }
     }
     else {
-        Write-Verbose 'Skipping backing up database due to -UsingExternalDb being true'
+        Write-Verbose 'Skipping backing up database due to external database being used'
     }
 }
 
-Test-Script-Can-Run $TomcatContainerName $DbContainerName
+Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $BashCapableImage
 
 Write-Verbose "Checking $AppDataVolumeName is a valid Code Dx appdata volume"
-if (-not (Test-Volume-Is-AppData $AppDataVolumeName)) {
+if (-not (Test-VolumeAppData $AppDataVolumeName)) {
     throw "The provided appdata volume $AppDataVolumeName does not appear to be Code Dx appdata. Example missing files include codedx.props and logback.xml."
 }
 if (!$UsingExternalDb) {
     Write-Verbose "Checking $DbDataVolumeName is a valid Code Dx database volume"
-    if (-not (Test-Volume-Is-Database $DbDataVolumeName)) {
+    if (-not (Test-VolumeDatabase $DbDataVolumeName)) {
         throw "The provided database volume $DbDataVolumeName does not appear to be a Code Dx database. Failed to locate system databases such as mysql."
     }
 }
 
 Write-Verbose "Creating Backup Volume $BackupVolumeName..."
-New-Backup-Volume $BackupVolumeName
-Write-Verbose "Successfully created backup volume $BackupVolumeName"
+New-BackupVolume $BackupVolumeName
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Verbose "Successfully created backup volume $BackupVolumeName"
+}
