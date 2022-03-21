@@ -1,6 +1,7 @@
 # The archive files the backup procedure will create and the restore procedure will refer to
 $AppDataArchiveName = "appdata-backup.tar.gz"
 $DbDataArchiveName = "db-backup.tar.gz"
+$CodeDxBackupVolume = "codedx-backups"
 
 function Test-RunningContainer([string] $ContainerName) {
     $Result = [bool] (docker container ls | Select-String -Quiet $ContainerName)
@@ -54,11 +55,11 @@ function Test-VolumeExists([string] $VolumeName) {
 }
 
 function Test-ImageExists([string] $ImageName) {
-    $Result = [bool] (docker images ls | Select-String -Quiet $ImageName)
+    [bool] $ImageExists = $(docker images --filter=reference=$ImageName).Split('\n').Length -gt 1
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to test the existence of image $ImageName"
     }
-    $Result
+    $ImageExists
 }
 
 function Test-Runnable(
