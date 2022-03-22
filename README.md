@@ -209,31 +209,27 @@ docker-compose -f docker-compose.yml down
 
 Once the containers are stopped:
 
-- If not using an external DB
-
 ```powershell
-./scripts/backup.ps1 -BackupVolumeName my-codedx-backup
+./scripts/backup.ps1 -BackupDirectoryName my-codedx-backup -ComposeConfigPath docker-compose.yml
 ```
 
-- If using an external DB, specify the `UsingExternalDb` switch
-
-```powershell
-./scripts/backup.ps1 -BackupVolumeName my-codedx-backup -UsingExternalDb
-```
-
-This will create a backup of the following under the named volume `my-codedx-backup`:
+This will create a backup of the following under the name `my-codedx-backup`:
 
 - The database of the `codedx-mariadb` container
   - If using a remote Code Dx database instance this step will be skipped. Steps should be taken to create a backup of the external database instead.
 - The app data used by the `codedx-tomcat` container
 
+The name of the backup in the command can also be omitted if it's preferred for a unique name to be generated. The generated name follows the format: `backup-{date}-{time}`
+
+Backups by default are kept for 30 days and will be removed the next time the backup script is run. You can configure this behavior with the `-Retain` option. E.g. `-Retain 0` for permanent backups, `-Retain 5` for 5 days, `-Retain 10:00` for 10 hours.
+
 You should see the following output when the backup has been successfully created:
 
 ```text
-Successfully created backup volume <backup-volume-name>
+Successfully created backup <backup-volume-name>
 ```
 
-Note that if you plan on keeping around backups after an upgrade, be cautious of commands such as `docker volume prune`. This backup volume is not attached to a container and would be deleted.
+Be cautious of commands such as `docker volume prune`. The volume storing the Code Dx backups is not attached to a container and would be deleted.
 
 ### Considerations When Using Multiple Directories
 
@@ -253,7 +249,7 @@ docker-compose -p codedx up
 Since the backup script works with these volumes it's important to specify the project name on your backup command if it differs from the default name `codedx-docker`. You can specify it like so:
 
 ```powershell
-./scripts/backup.ps1 -BackupVolumeName my-codedx-backup -p my-codedx-project
+./scripts/backup.ps1 -BackupDirectoryName my-codedx-backup -p my-codedx-project
 ```
 
 For more advanced usage of the backup script, such as setting the names of your Tomcat and DB containers if they're not the default, see the help info via the command:
@@ -298,17 +294,19 @@ docker-compose -f docker-compose.yml up
 
 In the event that an upgrade has gone wrong or existing Code Dx data has been corrupted/deleted, you may restore from a [previously created backup](#Creating-a-Backup).
 
-This can be done with the included `restore` script in your `codedx-docker/scripts` folder. This will restore Code Dx data from a provided backup volume name which was specified when creating the backup.
+This can be done with the included `restore` script in your `codedx-docker/scripts` folder. This will restore Code Dx data from a provided backup name which was either specified or generated when creating the backup.
 
 Make sure your containers aren't running before executing the script to avoid unexpected behavior.
 
 Assuming no defaults have been changed about the Code Dx Docker Compose environment:
 
 ```powershell
-./scripts/restore.ps1 -BackupVolumeName [backup-volume-name]
+./scripts/restore.ps1 -BackupDirectoryName [backup-name]
 ```
 
-Otherwise, if defaults were modified (e.g. project name, app data volume) then refer to the script's help for specifying these values
+Alternatively if you're not sure of the current backups on your system you can omit the `-BackupDirectoryName` option and a listing of backups will be displayed along with a prompt for you to select one.
+
+And if defaults were modified (e.g. project name, app data volume) then refer to the script's help for specifying these values
 
 ```powershell
 get-help .\scripts\restore.ps1 -full

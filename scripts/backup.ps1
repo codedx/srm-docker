@@ -22,34 +22,37 @@ containing directory of the compose file.
 If you have multiple Code Dx Docker Compose installations, you should specify the project name to refer
 to a specific one.
 
-By default, this is 'codedx-docker'.
-
 .PARAMETER AppDataVolumeName
-By default, this is the project name + '_' + 'codedx-appdata-volume'.
-
-If the tomcat container depends on a volume name other than this, the name from the docker-compose config file should be specified with this parameter. A named volume will be
-generated with the name provided by this parameter.
+If the Tomcat container depends on a volume name other than this, the name from the docker-compose config file (with the project name included) should be specified with this parameter.
 
 .PARAMETER DbDataVolumeName
-By default, this is the project name + '_' + 'codedx-database-volume'. Affects behavior when -UsingExternalDb is false.
+If the database container depends on a volume name other than the default, the name from the docker-compose config file (with the project name included) should be specified with this parameter.
 
-If the database container depends on a volume name other than the default, the name from the docker-compose config file should be specified with this parameter. A named volume will be
-generated with the name provided by this parameter.
+.PARAMETER CodeDxTomcatServiceName
+If the Tomcat service name is not 'codedx-tomcat' this should be set to that service name
 
-.PARAMETER TomcatContainerName
-By default, this is the project name + '_' + 'codedx-tomcat_1'.
+.PARAMETER CodeDxDbServiceName
+If the DB service name is not 'codedx-db' this should be set to that service name
 
-If the docker-compose config file specifies a service name other than 'codedx-tomcat', that updated value should be specified with this parameter.
+.PARAMETER ComposeConfigPath
+By default, this points to the default docker-compose config file that includes a database container.
 
-.PARAMETER DbContainerName
-By default, this is the project name + '_' + 'codedx-db_1'. Affects behavior when -UsingExternalDb is false.
+If using an external database, this should be set to the path of your external db docker-compose file.
 
-If the docker-compose config file specifies a service name other than 'codedx-db', that updated value should be specified with this parameter.
+.PARAMETER RetainPeriod
+By default backups are set for removal after 30 days. Where those expired backups are removed from the Code Dx backup volume the next
+time the backup script is run.
+
+The value supports number of days, hours, and minutes. It follows the format { [d.]hh:mm }, where 10 days is simply "10", 10.5 days is
+"10.12:00", and only 5 hours is "05:00".
+
+.PARAMETER SkipConfirmation
+When present, any prompts for user confirmation will be skipped and the program will resume
 
 .PARAMETER BackupDirectoryName
-//TODO
+The name of the directory the backup will be stored under in the Code Dx backup volume.
 
-//TODO add other parameters
+If not specified, an auto generated backup name will be used following the format of "backup-{date}-{time}"
 
 .LINK
 https://github.com/codedx/codedx-docker#creating-a-backup
@@ -63,13 +66,9 @@ param (
         [string] $DbDataVolumeName = "$ProjectName`_codedx-database-volume",
         [string] $CodeDxTomcatServiceName = "codedx-tomcat",
         [string] $CodeDxDbServiceName = "codedx-db",
-        [string] $TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1",
-        [string] $DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1",
         [string] $ComposeConfigPath = $(Resolve-Path "$PSScriptRoot\..\docker-compose.yml").Path,
         [string] $RetainPeriod = "30",
-        [string] $BashCapableImage,
         [switch] $SkipConfirmation,
-        [Parameter(Mandatory=$true)]
         [string] $BackupDirectoryName = "backup-$([System.DateTime]::Now.ToString("yyyyMMdd-HHmmss"))"
 )
 
@@ -80,12 +79,14 @@ Set-PSDebug -Strict
 
 . $PSScriptRoot/common.ps1
 
-$BashCapableImage = $BashCapableImage ? $BashCapableImage : (Get-TomcatImage $ComposeConfigPath)
+$TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1"
+$DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1"
+$BashCapableImage = Get-TomcatImage $ComposeConfigPath
 $UsingExternalDb = Test-UsingExternalDb $ComposeConfigPath
-$RetainTimeSpan = [TimeSpan]::Parse($RetainPeriod)
+$RetainTimeSpan = $RetainPeriod -eq "0" ? [TimeSpan]::MaxValue : [TimeSpan]::Parse($RetainPeriod)
 
 function Test-BackupExists([string] $BackupName) {
-    [bool] $Result = docker run --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
+    $Result = docker run --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
         cd /backup &&
         if [ -d `"$BackupName`" ]; then
             echo 1
@@ -96,7 +97,8 @@ function Test-BackupExists([string] $BackupName) {
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to test the existence of backup $BackupName"
     }
-    $Result
+    # The return code from the bash command will be interpreted as a string by pwsh
+    [System.Convert]::ToBoolean([int]$Result)
 }
 
 function Get-BackupConfirmation([string] $BackupName) {
@@ -118,7 +120,7 @@ function Get-BackupConfirmation([string] $BackupName) {
 
 function Test-VolumeAppData([string] $VolumeName) {
     if (Test-VolumeExists $VolumeName) {
-        [bool] $Result = docker run -u 0 --rm -v "$VolumeName`:/appdata" $BashCapableImage bash -c "
+        $Result = docker run -u 0 --rm -v "$VolumeName`:/appdata" $BashCapableImage bash -c "
         cd /appdata &&
         if [ -f codedx.props ] && [ -f logback.xml ]; then
             echo 1
@@ -128,7 +130,7 @@ function Test-VolumeAppData([string] $VolumeName) {
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to test the existence of appdata in $VolumeName"
         }
-        $Result
+        [System.Convert]::ToBoolean([int]$Result)
     }
     else {
         $false
@@ -137,7 +139,7 @@ function Test-VolumeAppData([string] $VolumeName) {
 
 function Test-VolumeDatabase([string] $VolumeName) {
     if (Test-VolumeExists $VolumeName) {
-        [bool]$Result = docker run -u 0 --rm -v "$VolumeName`:/db" $BashCapableImage bash -c "
+        $Result = docker run -u 0 --rm -v "$VolumeName`:/db" $BashCapableImage bash -c "
         cd /db &&
         if [ -d 'data' ] && [ -d 'data/mysql' ]; then
             echo 1
@@ -147,7 +149,7 @@ function Test-VolumeDatabase([string] $VolumeName) {
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to test the existence of database data in $VolumeName"
         }
-        $Result
+        [System.Convert]::ToBoolean([int]$Result)
     }
     else {
         $false
@@ -160,7 +162,7 @@ function Remove-OldBackups([TimeSpan] $RetainDuration) {
     $Local:ErrorActionPreference = 'Continue'
     docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
         cd /usr/local/tomcat/bin/ &&
-        ./clean-backups.sh $($RetainDuration.TotalDays) /backup
+        ./clean-backups.sh $($RetainDuration.Days) $($RetainDuration.Hours) $($RetainDuration.Minutes) /backup
     "
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to check if existing backups exceeded the retain period of $RetainPeriod days"
@@ -195,14 +197,14 @@ function New-Backup([string] $BackupName, [bool] $ExplicitBackupName) {
     Write-Verbose "Creating backup of appdata volume, $AppDataVolumeName..."
     # Create backup of appdata. tar -C is used to set the location for the archive, by doing this we don't store parent directories containing
     # our desired folder. Instead, it's just the contents of the volume in the archive.
-    docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$AppDataVolumeName`:/appdata" $BashCapableImage bash -c "tar -C /appdata -cvzf `"/backup/$BackupName/$AppDataArchiveName`" ."
+    docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$AppDataVolumeName`:/appdata" $BashCapableImage bash -c "tar -C /appdata -cvzf '/backup/$BackupName/$AppDataArchiveName' ."
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to backup appdata volume $AppDataVolumeName"
     }
     # Create backup of DB if it's being used according to the -UsingExternalDb switch
     if (!$UsingExternalDb) {
         Write-Verbose "Creating backup of DB volume, $DbDataVolumeName..."
-        docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$DbDataVolumeName`:/dbdata" $BashCapableImage bash -c "tar -C /dbdata -cvzf `"/backup/$BackupName/$DbDataArchiveName`" ."
+        docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$DbDataVolumeName`:/dbdata" $BashCapableImage bash -c "tar -C /dbdata -cvzf '/backup/$BackupName/$DbDataArchiveName' ."
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to backup database volume $DbDataVolumeName"
         }
@@ -229,7 +231,7 @@ Write-Verbose "Checking if any backups are older than the retain period of $($Re
 Remove-OldBackups $RetainTimeSpan
 
 Write-Verbose "Creating Backup $BackupDirectoryName..."
-New-Backup $BackupDirectoryName $PSBoundParameters.ContainsKey('BackupDirectoryName')
+New-Backup "$BackupDirectoryName" $PSBoundParameters.ContainsKey('BackupDirectoryName')
 
 if ($LASTEXITCODE -eq 0) {
     Write-Verbose "Successfully created backup $BackupDirectoryName"

@@ -24,31 +24,26 @@ If you have multiple Code Dx Docker Compose installations, you should specify th
 to a specific one.
 
 .PARAMETER AppDataVolumeName
-By default, this is the project name + '_' + 'codedx-appdata-volume'.
-
-If the tomcat container depends on a volume name other than this, the name from the docker-compose config file should be specified with this parameter. A named volume will be
-generated with the name provided by this parameter.
+If the Tomcat container depends on a volume name other than this, the name from the docker-compose config file (with the project name included) should be specified with this parameter.
 
 .PARAMETER DbDataVolumeName
-By default, this is the project name + '_' + 'codedx-database-volume'. Affects behavior when -UsingExternalDb is false.
+If the database container depends on a volume name other than the default, the name from the docker-compose config file (with the project name included) should be specified with this parameter.
 
-If the database container depends on a volume name other than the default, the name from the docker-compose config file should be specified with this parameter. A named volume will be
-generated with the name provided by this parameter.
+.PARAMETER CodeDxTomcatServiceName
+If the Tomcat service name is not 'codedx-tomcat' this should be set to that service name
 
-.PARAMETER TomcatContainerName
-By default, this is the project name + '_' + 'codedx-tomcat_1'.
+.PARAMETER CodeDxDbServiceName
+If the DB service name is not 'codedx-db' this should be set to that service name
 
-If the docker-compose config file specifies a service name other than 'codedx-tomcat', that updated value should be specified with this parameter.
+.PARAMETER ComposeConfigPath
+By default, this points to the default docker-compose config file that includes a database container.
 
-.PARAMETER DbContainerName
-By default, this is the project name + '_' + 'codedx-db_1'. Affects behavior when -UsingExternalDb is false.
-
-If the docker-compose config file specifies a service name other than 'codedx-db', that updated value should be specified with this parameter.
+If using an external database, this should be set to the path of your external db docker-compose file.
 
 .PARAMETER BackupDirectoryName
-// TODO
+The name of the directory the desired backup to restore from is stored under.
 
-// TODO other parameters
+If not specified, a listing of the current backups will be displayed along with a prompt for entering the name of one of those backups.
 
 .LINK
 https://github.com/codedx/codedx-docker#restoring-from-a-backup
@@ -62,11 +57,7 @@ param (
         [string] $DbDataVolumeName = "$ProjectName`_codedx-database-volume",
         [string] $CodeDxTomcatServiceName = "codedx-tomcat",
         [string] $CodeDxDbServiceName = "codedx-db",
-        [string] $TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1",
-        [string] $DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1",
         [string] $ComposeConfigPath = $(Resolve-Path "$PSScriptRoot\..\docker-compose.yml").Path,
-        [string] $BashCapableImage,
-        [Parameter(Mandatory=$true)]
         [string] $BackupDirectoryName
 )
 
@@ -77,12 +68,13 @@ Set-PSDebug -Strict
 
 . $PSScriptRoot/common.ps1
 
-
-$BashCapableImage = $BashCapableImage ? $BashCapableImage : (Get-TomcatImage $ComposeConfigPath)
+$TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1"
+$DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1"
+$BashCapableImage = Get-TomcatImage $ComposeConfigPath
 
 function Test-Archive([string] $BackupName, [string] $ArchiveName) {
-    [bool]$Result = docker run -u 0 --rm -v "$BackupName`:/backup" $BashCapableImage bash -c "
-    cd /backup &&
+    [bool]$Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
+    cd '/backup/$BackupName' &&
     if [ -f $ArchiveName ]; then
         echo 1
     else
@@ -97,8 +89,41 @@ function Test-Archive([string] $BackupName, [string] $ArchiveName) {
 # If the volume is missing the archive file, then it was likely created with the external db flag
 $UsingExternalDb = !(Test-Archive $BackupDirectoryName $DbDataArchiveName)
 
-function Test-BackupVolume([string] $VolumeName) {
-    (Test-Archive $VolumeName $AppDataArchiveName) -or (Test-Archive $VolumeName $DbDataVolumeName)
+function Test-BackupExists([string] $BackupName) {
+    $Result = docker run --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
+        cd /backup &&
+        if [ -d `"$BackupName`" ]; then
+            echo 1
+        else
+            echo 0
+        fi
+    "
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to test the existence of backup $BackupName"
+    }
+    # The return code from the bash command will be interpreted as a string by pwsh
+    [System.Convert]::ToBoolean([int]$Result)
+}
+
+function Test-Backup([string] $BackupName) {
+    (Test-Archive $BackupName $AppDataArchiveName) -or (Test-Archive $BackupName $DbDataVolumeName)
+}
+
+function Get-Backups {
+    $Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
+        cd /backup &&
+        ls
+    "
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to list backups in volume $CodeDxBackupVolume"
+    }
+    $Result
+}
+
+function Get-BackupName {
+    Write-Host "$(Get-Backups)"
+    $BackupChoice = Read-Host -Prompt "Choose from the backups above"
+    $BackupChoice.Trim()
 }
 
 function Restore-BackupVolume([string] $BackupName, [bool] $UsingExternalDb) {
@@ -118,8 +143,8 @@ function Restore-BackupVolume([string] $BackupName, [bool] $UsingExternalDb) {
         }
 
         Write-Verbose "Copying backup data from $BackupName to volumes $AppDataVolumeName, $DbDataVolumeName..."
-        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$DbDataVolumeName`:/dbdata" -v "$BackupName`:/backup" $BashCapableImage bash -c "
-            cd /backup &&
+        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$DbDataVolumeName`:/dbdata" -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
+            cd '/backup/$BackupName' &&
             tar -C /appdata -xvf $AppDataArchiveName &&
             tar -C /dbdata -xvf $DbDataArchiveName"
         if ($LASTEXITCODE -ne 0) {
@@ -128,8 +153,8 @@ function Restore-BackupVolume([string] $BackupName, [bool] $UsingExternalDb) {
     }
     else {
         Write-Verbose "Copying backup data from $BackupName to volume $AppDataVolumeName..."
-        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$BackupName`:/backup" $BashCapableImage bash -c "
-            cd /backup &&
+        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
+            cd '/backup/$BackupName' &&
             tar -C /appdata -xvf $AppDataArchiveName"
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to restore volume $AppDataVolumeName"
@@ -140,12 +165,20 @@ function Restore-BackupVolume([string] $BackupName, [bool] $UsingExternalDb) {
 
 Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $BashCapableImage
 
-Write-Verbose "Checking $BackupDirectoryName is a valid backup volume"
-if (-not (Test-VolumeExists $BackupDirectoryName)) {
-    throw "The provided volume name $BackupDirectoryName does not exist"
+Write-Verbose "Checking Code Dx backups volume $CodeDxBackupVolume and $BackupDirectoryName exists..."
+if (-not (Test-VolumeExists $CodeDxBackupVolume)) {
+    throw "The Code Dx backups volume doesn't exist"
 }
-if (-not (Test-BackupVolume $BackupDirectoryName)) {
-    throw "The provided volume name $BackupDirectoryName is not a backup generated by the bundled backup script. Neither $AppDataArchiveName or $DbDataArchiveName could be found."
+
+if (!$PSBoundParameters.ContainsKey('BackupDirectoryName')) {
+    $BackupDirectoryName = Get-BackupName
+}
+
+if (-not (Test-BackupExists "$BackupDirectoryName")) {
+    throw "The provided backup, $BackupDirectoryName, does not exist"
+}
+if (-not (Test-Backup $BackupDirectoryName)) {
+    throw "The provided backup, $BackupDirectoryName, is not a backup generated by the bundled backup script. Neither $AppDataArchiveName or $DbDataArchiveName could be found."
 }
 
 if ($UsingExternalDb) {
@@ -156,9 +189,9 @@ if ($UsingExternalDb) {
     }
 }
 
-Write-Verbose "Restoring Backup Volume $BackupDirectoryName..."
+Write-Verbose "Restoring from backup $BackupDirectoryName..."
 Restore-BackupVolume $BackupDirectoryName $UsingExternalDb
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Verbose "Sucessfully restored backup volume $BackupDirectoryName"
+    Write-Verbose "Sucessfully restored backup $BackupDirectoryName"
 }
