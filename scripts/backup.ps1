@@ -46,6 +46,11 @@ time the backup script is run.
 The value supports number of days, hours, and minutes. It follows the format { [d.]hh:mm }, where 10 days is simply "10", 10.5 days is
 "10.12:00", and only 5 hours is "05:00".
 
+.PARAMETER MaximumBackups
+The total number of backups that should be stored.
+
+E.g. If a new backup is created while already at max capacity, the oldest backup will be deleted to make room for the new backup.
+
 .PARAMETER SkipConfirmation
 When present, any prompts for user confirmation will be skipped and the program will resume
 
@@ -68,6 +73,7 @@ param (
         [string] $CodeDxDbServiceName = "codedx-db",
         [string] $ComposeConfigPath = $(Resolve-Path "$PSScriptRoot\..\docker-compose.yml").Path,
         [string] $RetainPeriod = "30",
+        [int] $MaximumBackups = "10",
         [switch] $SkipConfirmation,
         [string] $BackupDirectoryName = "backup-$([System.DateTime]::Now.ToString("yyyyMMdd-HHmmss"))"
 )
@@ -156,21 +162,35 @@ function Test-VolumeDatabase([string] $VolumeName) {
     }
 }
 
-function Remove-OldBackups([TimeSpan] $RetainDuration) {
-    # TODO, this isn't proceeding after throwing the error despite 'continue' being set
-    # on error action preference
+function Remove-ExpiredBackups([TimeSpan] $RetainDuration) {
     $Local:ErrorActionPreference = 'Continue'
     docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
         cd /usr/local/tomcat/bin/ &&
-        ./clean-backups.sh $($RetainDuration.Days) $($RetainDuration.Hours) $($RetainDuration.Minutes) /backup
+        ./remove-expired-backups.sh $($RetainDuration.Days) $($RetainDuration.Hours) $($RetainDuration.Minutes) /backup
     "
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to check if existing backups exceeded the retain period of $RetainPeriod days"
     }
 }
 
-function New-Backup([string] $BackupName, [bool] $ExplicitBackupName) {
+function Remove-ExcessBackups([int] $MaxBackups) {
+    $Local:ErrorActionPreference = 'Continue'
+    docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
+        cd /usr/local/tomcat/bin/ &&
+        ./remove-excess-backups.sh $MaxBackups /backup
+    "
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to check if existing backups exceeded the maximum count of $MaxBackups and should be deleted"
+    }
+}
+
+function Format-Volume([string] $BackupVolume, [bool] $ExplicitBackupName) {
     $OverwriteBackup = $false
+
+    if ($MaximumBackups -gt 0) {
+        Write-Verbose "Checking to see if current number of stored backups exceeds $MaximumBackups..."
+        Remove-ExcessBackups $MaximumBackups
+    }
 
     if ($ExplicitBackupName) {
         Write-Verbose "Checking if $BackupName already exists..."
@@ -179,20 +199,24 @@ function New-Backup([string] $BackupName, [bool] $ExplicitBackupName) {
 
     if ($OverwriteBackup) {
         Write-Verbose "User has chosen to overwrite existing backup $BackupName, overwriting..."
-        docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "rm -f `"/backup/$BackupName/*.tar.gz`""
+        docker run -u 0 --rm -v "$BackupVolume`:/backup" $BashCapableImage bash -c "rm -f `"/backup/$BackupName/*.tar.gz`""
         if ($LASTEXITCODE -ne 0) {
 			throw "Unable to delete contents of $BackupName for overwrite"
 		}
     }
     else {
-        docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
+        docker run -u 0 --rm -v "$BackupVolume`:/backup" $BashCapableImage bash -c "
             cd /backup &&
             mkdir -p $BackupName
         "
         if ($LASTEXITCODE -ne 0) {
-			throw "Unable to create backup directory $BackupName in $CodeDxBackupVolume"
+			throw "Unable to create backup directory $BackupName in $BackupVolume"
 		}
     }
+}
+
+function New-Backup([string] $BackupName, [bool] $ExplicitBackupName) {
+    Format-Volume $CodeDxBackupVolume $ExplicitBackupName
 
     Write-Verbose "Creating backup of appdata volume, $AppDataVolumeName..."
     # Create backup of appdata. tar -C is used to set the location for the archive, by doing this we don't store parent directories containing
@@ -227,8 +251,10 @@ if (!$UsingExternalDb) {
     }
 }
 
-Write-Verbose "Checking if any backups are older than the retain period of $($RetainTimeSpan.TotalDays) days..."
-Remove-OldBackups $RetainTimeSpan
+if (-not ($RetainTimeSpan -eq ([TimeSpan]::MaxValue))) {
+    Write-Verbose "Checking if any backups are older than the retain period of $($RetainTimeSpan.TotalDays) days..."
+    Remove-ExpiredBackups $RetainTimeSpan
+}
 
 Write-Verbose "Creating Backup $BackupDirectoryName..."
 New-Backup "$BackupDirectoryName" $PSBoundParameters.ContainsKey('BackupDirectoryName')
