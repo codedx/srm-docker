@@ -227,7 +227,7 @@ function New-Backup([string] $BackupName, [bool] $ExplicitBackupName) {
     }
     # Create backup of DB if it's being used according to the -UsingExternalDb switch
     if (!$UsingExternalDb) {
-        Write-Verbose "Creating backup of DB volume, $DbDataVolumeName..."
+        Write-Verbose "Creating backup of database volume, $DbDataVolumeName..."
         docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$DbDataVolumeName`:/dbdata" $BashCapableImage bash -c "tar -C /dbdata -cvzf '/backup/$BackupName/$DbDataArchiveName' ."
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to backup database volume $DbDataVolumeName"
@@ -240,19 +240,20 @@ function New-Backup([string] $BackupName, [bool] $ExplicitBackupName) {
 
 Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $BashCapableImage
 
-Write-Verbose "Checking $AppDataVolumeName is a valid Code Dx appdata volume"
+Write-Verbose "Checking $AppDataVolumeName is a valid Code Dx appdata volume..."
 if (-not (Test-VolumeAppData $AppDataVolumeName)) {
-    throw "The provided appdata volume $AppDataVolumeName does not appear to be Code Dx appdata. Example missing files include codedx.props and logback.xml."
+    throw "The provided appdata volume $AppDataVolumeName does not appear to be Code Dx appdata. Example missing files include codedx.props and logback.xml"
 }
 if (!$UsingExternalDb) {
-    Write-Verbose "Checking $DbDataVolumeName is a valid Code Dx database volume"
+    Write-Verbose "Checking $DbDataVolumeName is a valid Code Dx database volume..."
     if (-not (Test-VolumeDatabase $DbDataVolumeName)) {
-        throw "The provided database volume $DbDataVolumeName does not appear to be a Code Dx database. Failed to locate system databases such as mysql."
+        throw "The provided database volume $DbDataVolumeName does not appear to be a Code Dx database. Failed to locate system databases such as mysql"
     }
 }
 
 if (-not ($RetainTimeSpan -eq ([TimeSpan]::MaxValue))) {
-    Write-Verbose "Checking if any backups are older than the retain period of $($RetainTimeSpan.TotalDays) days..."
+    # Round the total days to 4 decimal places as it won't be more specific unless the user specifies only seconds (which isn't recommended)
+    Write-Verbose "Checking if any backups are older than the retain period of $([Math]::Round($RetainTimeSpan.TotalDays, 4)) days..."
     Remove-ExpiredBackups $RetainTimeSpan
 }
 
