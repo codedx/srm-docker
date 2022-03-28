@@ -226,7 +226,7 @@ Backups by default are kept for 30 days and will be removed the next time the ba
 You should see the following output when the backup has been successfully created:
 
 ```text
-Successfully created backup <backup-volume-name>
+Successfully created backup <backup-name>
 ```
 
 Be cautious of commands such as `docker volume prune`. The volume storing the Code Dx backups is not attached to a container and would be deleted.
@@ -315,5 +315,5 @@ get-help .\scripts\restore.ps1 -full
 After running the command, you should see
 
 ```text
-Successfully restored backup volume <backup-volume-name>
+Successfully restored backup <backup-name>
 ```
