@@ -201,6 +201,8 @@ After following the rest of each method's respective setup instructions, Code Dx
 
 Before upgrading to the latest Code Dx version you may wish to create a backup of your Code Dx Docker Compose environment. This can be done with the included `backup` script in your `codedx-docker/scripts` folder. Make sure you have PowerShell Core installed, if not, downloads can be found [here](https://github.com/PowerShell/PowerShell#get-powershell).
 
+When running the included scripts and other PowerShell specific commands, make sure you're either in a PowerShell Core terminal environment or the command begins with `pwsh` so it's run by PowerShell Core.
+
 While in the root of the `codedx-docker` folder, stop your containers with the following command before creating the backup to avoid storing incomplete data
 
 ```powershell
@@ -210,7 +212,7 @@ docker-compose -f docker-compose.yml down
 Once the containers are stopped:
 
 ```powershell
-./scripts/backup.ps1 -BackupDirectoryName my-codedx-backup -ComposeConfigPath docker-compose.yml
+pwsh ./scripts/backup.ps1 -BackupName my-codedx-backup -ComposeConfigPath docker-compose.yml
 ```
 
 This will create a backup of the following under the name `my-codedx-backup`:
@@ -249,13 +251,13 @@ docker-compose -p codedx up
 Since the backup script works with these volumes it's important to specify the project name on your backup command if it differs from the default name `codedx-docker`. You can specify it like so:
 
 ```powershell
-./scripts/backup.ps1 -BackupDirectoryName my-codedx-backup -p my-codedx-project
+pwsh ./scripts/backup.ps1 -BackupName my-codedx-backup -p my-codedx-project
 ```
 
 For more advanced usage of the backup script, such as setting the names of your Tomcat and DB containers if they're not the default, see the help info via the command:
 
 ```powershell
-get-help .\scripts\backup.ps1 -full
+pwsh -Command get-help .\scripts\backup.ps1 -full
 ```
 
 ### Upgrading to the Latest Code Dx Version
@@ -301,15 +303,15 @@ Make sure your containers aren't running before executing the script to avoid un
 Assuming no defaults have been changed about the Code Dx Docker Compose environment:
 
 ```powershell
-./scripts/restore.ps1 -BackupDirectoryName [backup-name]
+pwsh ./scripts/restore.ps1 -BackupName [backup-name]
 ```
 
-Alternatively if you're not sure of the current backups on your system you can omit the `-BackupDirectoryName` option and a listing of backups will be displayed along with a prompt for you to select one.
+Alternatively if you're not sure of the current backups on your system you can omit the `-BackupName` option and a listing of backups will be displayed along with a prompt for you to select one.
 
 And if defaults were modified (e.g. project name, app data volume) then refer to the script's help for specifying these values
 
 ```powershell
-get-help .\scripts\restore.ps1 -full
+pwsh -Command get-help .\scripts\restore.ps1 -full
 ```
 
 After running the command, you should see

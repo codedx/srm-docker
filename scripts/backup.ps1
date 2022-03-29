@@ -54,8 +54,8 @@ E.g. If a new backup is created while already at max capacity, the oldest backup
 .PARAMETER SkipConfirmation
 When present, any prompts for user confirmation will be skipped and the program will resume
 
-.PARAMETER BackupDirectoryName
-The name of the directory the backup will be stored under in the Code Dx backup volume.
+.PARAMETER BackupName
+The name of the backup to be stored in the Code Dx backup volume.
 
 If not specified, an auto generated backup name will be used following the format of "backup-{date}-{time}"
 
@@ -75,7 +75,7 @@ param (
         [string] $RetainPeriod = "30",
         [int] $MaximumBackups = "10",
         [switch] $SkipConfirmation,
-        [string] $BackupDirectoryName = "backup-$([System.DateTime]::Now.ToString("yyyyMMdd-HHmmss"))"
+        [string] $BackupName = "backup-$([System.DateTime]::Now.ToString("yyyyMMdd-HHmmss"))"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -87,12 +87,12 @@ Set-PSDebug -Strict
 
 $TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1"
 $DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1"
-$BashCapableImage = Get-TomcatImage $ComposeConfigPath
+$TomcatImage = Get-TomcatImage $ComposeConfigPath
 $UsingExternalDb = Test-UsingExternalDb $ComposeConfigPath
 $RetainTimeSpan = $RetainPeriod -eq "0" ? [TimeSpan]::MaxValue : [TimeSpan]::Parse($RetainPeriod)
 
 function Test-BackupExists([string] $BackupName) {
-    $Result = docker run --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
+    $Result = docker run --rm -v $CodeDxBackupVolume`:/backup $TomcatImage bash -c "
         cd /backup &&
         if [ -d `"$BackupName`" ]; then
             echo 1
@@ -108,64 +108,63 @@ function Test-BackupExists([string] $BackupName) {
 }
 
 function Get-BackupConfirmation([string] $BackupName) {
-    if (Test-BackupExists $BackupName) {
-        if (!$SkipConfirmation) {
-            $continueAnswer = Read-Host -Prompt "A backup with the name $BackupName already exists, continuing will overwrite this backup. Continue? (y/n)"
-            if (-not ($continueAnswer -eq "y" -or $continueAnswer -eq "yes")) {
-                Exit 0
-            }
-        }
-        # Indicates the user has chosen to overwrite an existing backup
-        1
-    }
-    else {
+    if (-not (Test-BackupExists $BackupName)) {
         # Backup doesn't already exist
-        0
+        return 0
     }
+
+    if (!$SkipConfirmation) {
+        $continueAnswer = Read-Host -Prompt "A backup with the name $BackupName already exists, continuing will overwrite this backup. Continue? (y/n)"
+        if (-not ($continueAnswer -eq "y" -or $continueAnswer -eq "yes")) {
+            Exit 0
+        }
+    }
+    # Backup exists and will be overridden
+    1
 }
 
 function Test-VolumeAppData([string] $VolumeName) {
-    if (Test-VolumeExists $VolumeName) {
-        $Result = docker run -u 0 --rm -v "$VolumeName`:/appdata" $BashCapableImage bash -c "
+    if (-not (Test-VolumeExists $VolumeName)) {
+        return $false
+    }
+
+    $Result = docker run -u 0 --rm -v "$VolumeName`:/appdata" $TomcatImage bash -c "
         cd /appdata &&
         if [ -f codedx.props ] && [ -f logback.xml ]; then
             echo 1
         else
             echo 0
-        fi"
-        if ($LASTEXITCODE -ne 0) {
-            throw "Unable to test the existence of appdata in $VolumeName"
-        }
-        [System.Convert]::ToBoolean([int]$Result)
+        fi
+    "
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to test the existence of appdata in $VolumeName"
     }
-    else {
-        $false
-    }
+    [System.Convert]::ToBoolean([int]$Result)
 }
 
 function Test-VolumeDatabase([string] $VolumeName) {
-    if (Test-VolumeExists $VolumeName) {
-        $Result = docker run -u 0 --rm -v "$VolumeName`:/db" $BashCapableImage bash -c "
+    if (-not (Test-VolumeExists $VolumeName)) {
+        return $false
+    }
+
+    $Result = docker run -u 0 --rm -v "$VolumeName`:/db" $TomcatImage bash -c "
         cd /db &&
         if [ -d 'data' ] && [ -d 'data/mysql' ]; then
             echo 1
         else
             echo 0
-        fi"
-        if ($LASTEXITCODE -ne 0) {
-            throw "Unable to test the existence of database data in $VolumeName"
-        }
-        [System.Convert]::ToBoolean([int]$Result)
+        fi
+    "
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to test the existence of database data in $VolumeName"
     }
-    else {
-        $false
-    }
+    [System.Convert]::ToBoolean([int]$Result)
 }
 
 function Remove-ExpiredBackups([TimeSpan] $RetainDuration) {
     $Local:ErrorActionPreference = 'Continue'
-    docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
-        cd /usr/local/tomcat/bin/ &&
+    docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $TomcatImage bash -c "
+        cd /root/.docker-compose &&
         ./remove-expired-backups.sh $($RetainDuration.Days) $($RetainDuration.Hours) $($RetainDuration.Minutes) /backup
     "
     if ($LASTEXITCODE -ne 0) {
@@ -175,8 +174,8 @@ function Remove-ExpiredBackups([TimeSpan] $RetainDuration) {
 
 function Remove-ExcessBackups([int] $MaxBackups) {
     $Local:ErrorActionPreference = 'Continue'
-    docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
-        cd /usr/local/tomcat/bin/ &&
+    docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $TomcatImage bash -c "
+        cd /root/.docker-compose &&
         ./remove-excess-backups.sh $MaxBackups /backup
     "
     if ($LASTEXITCODE -ne 0) {
@@ -199,13 +198,13 @@ function Format-Volume([string] $BackupVolume, [bool] $ExplicitBackupName) {
 
     if ($OverwriteBackup) {
         Write-Verbose "User has chosen to overwrite existing backup $BackupName, overwriting..."
-        docker run -u 0 --rm -v "$BackupVolume`:/backup" $BashCapableImage bash -c "rm -f `"/backup/$BackupName/*.tar.gz`""
+        docker run -u 0 --rm -v "$BackupVolume`:/backup" $TomcatImage bash -c "rm -f `"/backup/$BackupName/*.tar.gz`""
         if ($LASTEXITCODE -ne 0) {
 			throw "Unable to delete contents of $BackupName for overwrite"
 		}
     }
     else {
-        docker run -u 0 --rm -v "$BackupVolume`:/backup" $BashCapableImage bash -c "
+        docker run -u 0 --rm -v "$BackupVolume`:/backup" $TomcatImage bash -c "
             cd /backup &&
             mkdir -p $BackupName
         "
@@ -221,14 +220,14 @@ function New-Backup([string] $BackupName, [bool] $ExplicitBackupName) {
     Write-Verbose "Creating backup of appdata volume, $AppDataVolumeName..."
     # Create backup of appdata. tar -C is used to set the location for the archive, by doing this we don't store parent directories containing
     # our desired folder. Instead, it's just the contents of the volume in the archive.
-    docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$AppDataVolumeName`:/appdata" $BashCapableImage bash -c "tar -C /appdata -cvzf '/backup/$BackupName/$AppDataArchiveName' ."
+    docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$AppDataVolumeName`:/appdata" $TomcatImage bash -c "tar -C /appdata -cvzf '/backup/$BackupName/$AppDataArchiveName' ."
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to backup appdata volume $AppDataVolumeName"
     }
     # Create backup of DB if it's being used according to the -UsingExternalDb switch
     if (!$UsingExternalDb) {
         Write-Verbose "Creating backup of database volume, $DbDataVolumeName..."
-        docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$DbDataVolumeName`:/dbdata" $BashCapableImage bash -c "tar -C /dbdata -cvzf '/backup/$BackupName/$DbDataArchiveName' ."
+        docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" -v "$DbDataVolumeName`:/dbdata" $TomcatImage bash -c "tar -C /dbdata -cvzf '/backup/$BackupName/$DbDataArchiveName' ."
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to backup database volume $DbDataVolumeName"
         }
@@ -238,7 +237,7 @@ function New-Backup([string] $BackupName, [bool] $ExplicitBackupName) {
     }
 }
 
-Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $BashCapableImage
+Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $TomcatImage
 
 Write-Verbose "Checking $AppDataVolumeName is a valid Code Dx appdata volume..."
 if (-not (Test-VolumeAppData $AppDataVolumeName)) {
@@ -257,9 +256,9 @@ if (-not ($RetainTimeSpan -eq ([TimeSpan]::MaxValue))) {
     Remove-ExpiredBackups $RetainTimeSpan
 }
 
-Write-Verbose "Creating Backup $BackupDirectoryName..."
-New-Backup "$BackupDirectoryName" $PSBoundParameters.ContainsKey('BackupDirectoryName')
+Write-Verbose "Creating backup $BackupName..."
+New-Backup "$BackupName" $PSBoundParameters.ContainsKey('BackupName')
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Verbose "Successfully created backup $BackupDirectoryName"
+    Write-Verbose "Successfully created backup $BackupName"
 }

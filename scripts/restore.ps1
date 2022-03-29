@@ -40,8 +40,8 @@ By default, this points to the default docker-compose config file that includes 
 
 If using an external database, this should be set to the path of your external db docker-compose file.
 
-.PARAMETER BackupDirectoryName
-The name of the directory the desired backup to restore from is stored under.
+.PARAMETER BackupName
+The name of the desired backup to restore from in the Code Dx backup volume.
 
 If not specified, a listing of the current backups will be displayed along with a prompt for entering the name of one of those backups.
 
@@ -58,7 +58,7 @@ param (
         [string] $CodeDxTomcatServiceName = "codedx-tomcat",
         [string] $CodeDxDbServiceName = "codedx-db",
         [string] $ComposeConfigPath = $(Resolve-Path "$PSScriptRoot\..\docker-compose.yml").Path,
-        [string] $BackupDirectoryName
+        [string] $BackupName
 )
 
 $ErrorActionPreference = 'Stop'
@@ -70,16 +70,17 @@ Set-PSDebug -Strict
 
 $TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1"
 $DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1"
-$BashCapableImage = Get-TomcatImage $ComposeConfigPath
+$TomcatImage = Get-TomcatImage $ComposeConfigPath
 
 function Test-Archive([string] $BackupName, [string] $ArchiveName) {
-    [bool]$Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
-    cd '/backup/$BackupName' &&
-    if [ -f $ArchiveName ]; then
-        echo 1
-    else
-        echo 0
-    fi"
+    [bool]$Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $TomcatImage bash -c "
+        cd '/backup/$BackupName' &&
+        if [ -f $ArchiveName ]; then
+            echo 1
+        else
+            echo 0
+        fi
+    "
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to test existence of the archive $ArchiveName in $BackupName"
     }
@@ -87,10 +88,10 @@ function Test-Archive([string] $BackupName, [string] $ArchiveName) {
 }
 
 # If the volume is missing the archive file, then it was likely created with the external db flag
-$UsingExternalDb = !(Test-Archive $BackupDirectoryName $DbDataArchiveName)
+$UsingExternalDb = !(Test-Archive $BackupName $DbDataArchiveName)
 
 function Test-BackupExists([string] $BackupName) {
-    $Result = docker run --rm -v $CodeDxBackupVolume`:/backup $BashCapableImage bash -c "
+    $Result = docker run --rm -v $CodeDxBackupVolume`:/backup $TomcatImage bash -c "
         cd /backup &&
         if [ -d `"$BackupName`" ]; then
             echo 1
@@ -110,7 +111,7 @@ function Test-Backup([string] $BackupName) {
 }
 
 function Get-Backups {
-    $Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
+    $Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $TomcatImage bash -c "
         cd /backup &&
         ls
     "
@@ -143,19 +144,21 @@ function Restore-BackupVolume([string] $BackupName, [bool] $UsingExternalDb) {
         }
 
         Write-Verbose "Copying backup data from $BackupName to volumes $AppDataVolumeName, $DbDataVolumeName..."
-        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$DbDataVolumeName`:/dbdata" -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
+        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$DbDataVolumeName`:/dbdata" -v "$CodeDxBackupVolume`:/backup" $TomcatImage bash -c "
             cd '/backup/$BackupName' &&
             tar -C /appdata -xvf $AppDataArchiveName &&
-            tar -C /dbdata -xvf $DbDataArchiveName"
+            tar -C /dbdata -xvf $DbDataArchiveName
+        "
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to restore volumes $AppDataVolumeName, $DbDataVolumeName"
         }
     }
     else {
         Write-Verbose "Copying backup data from $BackupName to volume $AppDataVolumeName..."
-        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$CodeDxBackupVolume`:/backup" $BashCapableImage bash -c "
+        docker run -u 0 --rm -v "$AppDataVolumeName`:/appdata" -v "$CodeDxBackupVolume`:/backup" $TomcatImage bash -c "
             cd '/backup/$BackupName' &&
-            tar -C /appdata -xvf $AppDataArchiveName"
+            tar -C /appdata -xvf $AppDataArchiveName
+        "
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to restore volume $AppDataVolumeName"
         }
@@ -163,22 +166,22 @@ function Restore-BackupVolume([string] $BackupName, [bool] $UsingExternalDb) {
     }
 }
 
-Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $BashCapableImage
+Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $TomcatImage
 
-Write-Verbose "Checking Code Dx backups volume $CodeDxBackupVolume and if $BackupDirectoryName exists..."
+Write-Verbose "Checking Code Dx backups volume $CodeDxBackupVolume and if $BackupName exists..."
 if (-not (Test-VolumeExists $CodeDxBackupVolume)) {
     throw "The Code Dx backups volume doesn't exist"
 }
 
-if (!$PSBoundParameters.ContainsKey('BackupDirectoryName')) {
-    $BackupDirectoryName = Get-BackupName
+if (!$PSBoundParameters.ContainsKey('BackupName')) {
+    $BackupName = Get-BackupName
 }
 
-if (-not (Test-BackupExists "$BackupDirectoryName")) {
-    throw "The provided backup, $BackupDirectoryName, does not exist"
+if (-not (Test-BackupExists "$BackupName")) {
+    throw "The provided backup, $BackupName, does not exist"
 }
-if (-not (Test-Backup $BackupDirectoryName)) {
-    throw "The provided backup, $BackupDirectoryName, is not a backup generated by the bundled backup script. Neither $AppDataArchiveName or $DbDataArchiveName could be found"
+if (-not (Test-Backup $BackupName)) {
+    throw "The provided backup, $BackupName, is not a backup generated by the bundled backup script. Neither $AppDataArchiveName or $DbDataArchiveName could be found"
 }
 
 if ($UsingExternalDb) {
@@ -189,9 +192,9 @@ if ($UsingExternalDb) {
     }
 }
 
-Write-Verbose "Restoring from backup $BackupDirectoryName..."
-Restore-BackupVolume $BackupDirectoryName $UsingExternalDb
+Write-Verbose "Restoring from backup $BackupName..."
+Restore-BackupVolume $BackupName $UsingExternalDb
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Verbose "Sucessfully restored backup $BackupDirectoryName"
+    Write-Verbose "Sucessfully restored backup $BackupName"
 }
