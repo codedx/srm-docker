@@ -223,7 +223,10 @@ This will create a backup of the following under the name `my-codedx-backup`:
 
 The name of the backup in the command can also be omitted if it's preferred for a unique name to be generated. The generated name follows the format: `backup-{date}-{time}`
 
-Backups by default are kept for 30 days and will be removed the next time the backup script is run. You can configure this behavior with the `-Retain` option. E.g. `-Retain 0` for permanent backups, `-Retain 5` for 5 days, `-Retain 10:00` for 10 hours.
+Backups can be automatically removed by the backup script if they meet one of the following criteria:
+
+- Older than 30 days. The default of 30 days may be changed with the `-Retain` option on the backup script. E.g. `-Retain 0` for permanent backups, `-Retain 5` for 5 days, and `-Retain 10:00` for 10 hours.
+- Oldest backup when creating a new backup that would exceed the maximum backups stored. By default a maximum of 10 backups will be stored at a time. This can be configured with the `-MaximumBackups` option on the backup script.
 
 You should see the following output when the backup has been successfully created:
 
