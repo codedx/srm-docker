@@ -16,59 +16,76 @@ Describe 'version.ps1' {
 	It 'mismatched version updates' {
 
 		Mock Get-Content  {
-			$fileSource[$path]
+			$fileSource[$path[0]]
 		}
 
 		Mock Set-Content {
-			$fileContent[$path[0]] = $value
+			$fileSource[$path[0]] = $value
 		}
 
-		$oldVersion = 'codedx/codedx-tomcat:v1.2.3'
+		$oldCodeDxVersion = 'codedx/codedx-tomcat:v1.2.3'
+		$oldMariaDbVersion = 'codedx/codedx-mariadb:v4.5.6'
 
-		$newTag = 'v3.2.1'
-		$newVersion = "codedx/codedx-tomcat:$newTag"
+		$newCodeDxTag = 'v3.2.1'
+		$newMariaDbTag = 'v6.5.4'
+		$newCodeDxVersion = "codedx/codedx-tomcat:$newCodeDxTag"
+		$newMariaDbVersion = "codedx/codedx-mariadb:$newMariaDbTag"
 
-		. ./.version/version.ps1 $newTag
+		. ./.version/version.ps1 $newCodeDxTag $newMariaDbTag
 
-		$fileContent.Keys | ForEach-Object {
-			$fileContent[$_] | Select-String -Pattern "image: $newVersion" -SimpleMatch -Quiet | Should -BeTrue
-			$fileContent[$_] | Select-String -Pattern "image: $oldVersion" -SimpleMatch -Quiet | Should -BeFalse
+		$fileSource.Keys | ForEach-Object {
+			Write-Host "Testing $_..."
+			$fileSource[$_] | Select-String -Pattern "image: $newCodeDxVersion" -SimpleMatch -Quiet | Should -BeTrue
+			$fileSource[$_] | Select-String -Pattern "image: $oldCodeDxVersion" -SimpleMatch -Quiet | Should -BeFalse
+
+			if ($_ -eq './docker-compose.yml') {
+				$fileSource[$_] | Select-String -Pattern "image: $newMariaDbVersion" -SimpleMatch -Quiet | Should -BeTrue
+				$fileSource[$_] | Select-String -Pattern "image: $oldMariaDbVersion" -SimpleMatch -Quiet | Should -BeFalse
+			}
 		}
 
-		Assert-MockCalled -CommandName 'Get-Content' -Exactly 3
-		Assert-MockCalled -CommandName 'Set-Content' -Exactly 3
+		Assert-MockCalled -CommandName 'Get-Content' -Exactly 4
+		Assert-MockCalled -CommandName 'Set-Content' -Exactly 4
 	}
 
 	It 'matched version is a no-op' {
 
 		Mock Get-Content  {
-			$fileSource[$path]
+			$fileSource[$path[0]]
 		}
 
 		Mock Set-Content {
-			$fileContent[$path[0]] = $value
+			$fileSource[$path[0]] = $value
 		}
 
-		$oldVersion = 'codedx/codedx-tomcat:v1.2.3'
-		$newTag = 'v1.2.3'
+		$oldCodeDxVersion = 'codedx/codedx-tomcat:v1.2.3'
+		$newCodeDxTag = 'v1.2.3'
 
-		. ./.version/version.ps1 $newTag
+		$oldMariaDbVersion = 'codedx/codedx-mariadb:v4.5.6'
+		$newMariaDbTag = 'v4.5.6'
 
-		$fileContent.Keys | ForEach-Object {
-			$fileContent[$_] | Select-String -Pattern "image: $oldVersion" -SimpleMatch -Quiet | Should -BeTrue
+		. ./.version/version.ps1 $newCodeDxTag $newMariaDbTag
+
+		$fileSource.Keys | ForEach-Object {
+			Write-Host "Testing $_..."
+			$fileSource[$_] | Select-String -Pattern "image: $oldCodeDxVersion" -SimpleMatch -Quiet | Should -BeTrue
+
+			if ($_ -eq './docker-compose.yml') {
+				$fileSource[$_] | Select-String -Pattern "image: $oldMariaDbVersion" -SimpleMatch -Quiet | Should -BeTrue
+			}
 		}
 
-		Assert-MockCalled -CommandName 'Get-Content' -Exactly 3
-		Assert-MockCalled -CommandName 'Set-Content' -Exactly 3
+		Assert-MockCalled -CommandName 'Get-Content' -Exactly 4
+		Assert-MockCalled -CommandName 'Set-Content' -Exactly 4
 	}
 
-	BeforeAll {
+	BeforeEach {
 		$global:fileSource = @{
 			'./docker-compose.yml' = @'
 version: '2'
 services:
 	codedx-db:
-		image: bitnami/mariadb:10.3.25-debian-10-r18
+		image: codedx/codedx-mariadb:v4.5.6
 		environment:
 			- MARIADB_ROOT_PASSWORD=root
 			- MARIADB_DATABASE=codedx
@@ -149,9 +166,5 @@ To configure, edit the `docker-compose.yml` codedx-tomcat section to look like:
 			- codedx-db
 '@
 		}
-	}
-
-	BeforeEach {
-		$global:fileContent = @{}
 	}
 }
