@@ -10,8 +10,7 @@ Restores a Code Dx Docker Compose install with the data in a provided backup vol
 
 .DESCRIPTION
 This script restores the data present in a Code Dx backup volume to the volumes the Code Dx docker-compose
-environment depends on (appdata for tomcat, db for maraidb). If the backup volume was created with the -UsingExternalDb switch then
-database data will not be restored by this procedure.
+environment depends on (appdata for tomcat, db for maraidb).
 
 .PARAMETER ProjectName
 The name used for prefacing volume and container names.
@@ -72,6 +71,14 @@ $TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1"
 $DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1"
 $TomcatImage = Get-TomcatImage $ComposeConfigPath
 
+# Custom prompt for obtaining BackupName, otherwise, would have set it as required in the params
+if (!$PSBoundParameters.ContainsKey('BackupName')) {
+    $BackupName = Get-BackupName
+}
+
+# If the volume is missing the archive file, then it was likely created with the external db flag
+$UsingExternalDb = !(Test-Archive $BackupName $DbDataArchiveName)
+
 function Test-Archive([string] $BackupName, [string] $ArchiveName) {
     [bool]$Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $TomcatImage bash -c "
         cd '/backup/$BackupName' &&
@@ -86,9 +93,6 @@ function Test-Archive([string] $BackupName, [string] $ArchiveName) {
     }
     $Result
 }
-
-# If the volume is missing the archive file, then it was likely created with the external db flag
-$UsingExternalDb = !(Test-Archive $BackupName $DbDataArchiveName)
 
 function Test-BackupExists([string] $BackupName) {
     $Result = docker run --rm -v $CodeDxBackupVolume`:/backup $TomcatImage bash -c "
@@ -171,10 +175,6 @@ Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVo
 Write-Verbose "Checking Code Dx backups volume $CodeDxBackupVolume and if $BackupName exists..."
 if (-not (Test-VolumeExists $CodeDxBackupVolume)) {
     throw "The Code Dx backups volume doesn't exist"
-}
-
-if (!$PSBoundParameters.ContainsKey('BackupName')) {
-    $BackupName = Get-BackupName
 }
 
 if (-not (Test-BackupExists "$BackupName")) {
