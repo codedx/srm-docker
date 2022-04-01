@@ -10,7 +10,7 @@ Restores a Code Dx Docker Compose install with the data in a provided backup vol
 
 .DESCRIPTION
 This script restores the data present in a Code Dx backup volume to the volumes the Code Dx docker-compose
-environment depends on (appdata for tomcat, db for maraidb).
+environment depends on (appdata for tomcat, db for mariadb).
 
 .PARAMETER ProjectName
 The name used for prefacing volume and container names.
@@ -71,16 +71,8 @@ $TomcatContainerName = "$ProjectName`_$CodeDxTomcatServiceName`_1"
 $DbContainerName = "$ProjectName`_$CodeDxDbServiceName`_1"
 $TomcatImage = Get-TomcatImage $ComposeConfigPath
 
-# Custom prompt for obtaining BackupName, otherwise, would have set it as required in the params
-if (!$PSBoundParameters.ContainsKey('BackupName')) {
-    $BackupName = Get-BackupName
-}
-
-# If the volume is missing the archive file, then it was likely created with the external db flag
-$UsingExternalDb = !(Test-Archive $BackupName $DbDataArchiveName)
-
 function Test-Archive([string] $BackupName, [string] $ArchiveName) {
-    [bool]$Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $TomcatImage bash -c "
+    $Result = docker run -u 0 --rm -v "$CodeDxBackupVolume`:/backup" $TomcatImage bash -c "
         cd '/backup/$BackupName' &&
         if [ -f $ArchiveName ]; then
             echo 1
@@ -91,7 +83,8 @@ function Test-Archive([string] $BackupName, [string] $ArchiveName) {
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to test existence of the archive $ArchiveName in $BackupName"
     }
-    $Result
+    # The return code from the bash command will be interpreted as a string by pwsh
+    [System.Convert]::ToBoolean([int]$Result)
 }
 
 function Test-BackupExists([string] $BackupName) {
@@ -169,6 +162,14 @@ function Restore-BackupVolume([string] $BackupName, [bool] $UsingExternalDb) {
         Write-Verbose "Skipping restoring database due to there being no database archive file"
     }
 }
+
+# Custom prompt for obtaining BackupName, otherwise, would have set it as required in the params
+if ('' -eq $BackupName.trim()) {
+    $BackupName = Get-BackupName
+}
+
+# If the volume is missing the archive file, then it was likely created with the external db flag
+$UsingExternalDb = !(Test-Archive $BackupName $DbDataArchiveName)
 
 Test-Runnable $TomcatContainerName $DbContainerName $AppDataVolumeName $DbDataVolumeName $ComposeConfigPath $TomcatImage
 
