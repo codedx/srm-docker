@@ -1,3 +1,4 @@
 * text=auto
 *.sh text eol=lf
 *.xml text eol=lf
+/scripts/**.ps1 text eol=lf
