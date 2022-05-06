@@ -165,7 +165,7 @@ function Remove-ExpiredBackups([TimeSpan] $RetainDuration) {
     $Local:ErrorActionPreference = 'Continue'
     docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $TomcatImage bash -c "
         cd /root/.docker-compose &&
-        ./remove-expired-backups.sh $($RetainDuration.Days) $($RetainDuration.Hours) $($RetainDuration.Minutes) /backup
+        /usr/bin/bash ./remove-expired-backups.sh $($RetainDuration.Days) $($RetainDuration.Hours) $($RetainDuration.Minutes) /backup
     "
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to check if existing backups exceeded the retain period of $RetainPeriod days"
@@ -176,7 +176,7 @@ function Remove-ExcessBackups([int] $MaxBackups) {
     $Local:ErrorActionPreference = 'Continue'
     docker run -u 0 --rm -v $CodeDxBackupVolume`:/backup $TomcatImage bash -c "
         cd /root/.docker-compose &&
-        ./remove-excess-backups.sh $MaxBackups /backup
+        /usr/bin/bash ./remove-excess-backups.sh $MaxBackups /backup
     "
     if ($LASTEXITCODE -ne 0) {
         throw "Unable to check if existing backups exceeded the maximum count of $MaxBackups and should be deleted"
