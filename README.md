@@ -49,7 +49,7 @@ You can mount your cacerts file by adding a line to the volumes list in the code
 
 ```yaml
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v2022.4.4
+        image: codedx/codedx-tomcat:v2022.4.5
         environment:
             DB_URL: "jdbc:mysql://codedx-db/codedx"
             DB_DRIVER: "com.mysql.jdbc.Driver"
@@ -172,7 +172,7 @@ Update your codedx-tomcat section with SSL and server.xml volume mounts and swit
 
 ```yaml
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v2022.4.4
+        image: codedx/codedx-tomcat:v2022.4.5
         environment:
             DB_URL: "jdbc:mysql://codedx-db/codedx"
             DB_DRIVER: "com.mysql.jdbc.Driver"
