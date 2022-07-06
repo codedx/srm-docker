@@ -59,7 +59,7 @@ You can mount your cacerts file by adding a line to the volumes list in the code
             SUPERUSER_PASSWORD: "secret"
         volumes:
             - codedx-appdata:/opt/codedx
-            - /path/to/cacerts:/opt/java/openjdk/jre/lib/security/cacerts
+            - /path/to/cacerts:/opt/java/openjdk/lib/security/cacerts
         ports:
             - 8080:8080
         depends_on:
