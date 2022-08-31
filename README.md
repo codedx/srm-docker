@@ -84,7 +84,7 @@ Here's how this can be done in a Docker Compose install:
     docker-compose -f docker-compose.yml up
     ```
 
-    If an external database install is being used, you would instead use the command:
+    If an external database install is being used (Code Dx currently requires [MariaDB version 10.3.x](https://mariadb.com/kb/en/release-notes-mariadb-103-series/)), you would instead use the command:
 
     ```bash
     docker-compose -f docker-compose-external-db.yml up

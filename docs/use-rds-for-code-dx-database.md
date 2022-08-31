@@ -2,6 +2,8 @@
 
 Here are the steps to run Code Dx with Docker Compose and an Amazon RDS database instance.
 
+>Note: Code Dx currently requires [MariaDB version 10.3.x](https://mariadb.com/kb/en/release-notes-mariadb-103-series/).
+
 1. Follow the [Use Amazon RDS with MariaDB engine for your Code Dx database](https://github.com/codedx/codedx-kubernetes/blob/master/setup/core/docs/db/use-rds-for-code-dx-database.md) instructions to provision a new Amazon RDS MariaDB database instance.
 
 2. Download the [Amazon RDS root certificate](https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem).
