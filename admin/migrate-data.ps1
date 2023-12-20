@@ -1,13 +1,13 @@
 <#PSScriptInfo
-.VERSION 1.0.0
+.VERSION 1.1.0
 .GUID a56b7e15-a300-4da7-85b6-8c3bdff8d897
-.AUTHOR Code Dx
+.AUTHOR Software Risk Manager
 #>
 
 <#
 .DESCRIPTION
-This script helps you migrate Code Dx data from a system created by the
-Code Dx Installer to a Code Dx deployment running with Docker Compose.
+This script helps you migrate Software Risk Manager data from a system created by the
+Software Risk Manager Installer to a Software Risk Manager deployment running with Docker Compose.
 #>
 
 param (
@@ -50,18 +50,18 @@ if (-not (Test-Path $dbDumpFilePath -PathType Leaf)) {
 }
 
 if ($appDataPath -eq '') { 
-	$appDataPath = Read-Host 'Enter the path to your Code Dx AppData folder'
+	$appDataPath = Read-Host 'Enter the path to your Software Risk Manager AppData folder'
 }
 
 Write-Verbose 'Checking appdata path...'
 if (-not (Test-Path $appDataPath -PathType Container)) {
-	throw "Unable to find Code Dx AppData folder at $appDataPath."
+	throw "Unable to find Software Risk Manager AppData folder at $appDataPath."
 }
 
 Write-Verbose 'Checking appdata/analysis-files path...'
 $analysisFiles = join-path $appDataPath 'analysis-files'
 if (-not (Test-Path $analysisFiles -PathType Container)) {
-	throw "Unable to find Code Dx AppData analysis-files folder at $analysisFiles."
+	throw "Unable to find Software Risk Manager AppData analysis-files folder at $analysisFiles."
 }
 
 if ($dbRootPwd -eq '') {
@@ -81,7 +81,7 @@ Write-Verbose 'Checking running containers...'
 $tomcatContainerName,$dbContainerName | ForEach-Object {
 
 	if (-not (Test-RunningContainer $_)) {
-		throw "Unable to continue because a running container named $_ could not be found. Is Code Dx running with Docker Compose and did you specify the correct script parameters (-tomcatContainerName and -dbContainerName)?"
+		throw "Unable to continue because a running container named $_ could not be found. Is Software Risk Manager running with Docker Compose and did you specify the correct script parameters (-tomcatContainerName and -dbContainerName)?"
 	}
 }
 
@@ -154,15 +154,15 @@ Write-Verbose 'Copying directories...'
 
 if ($skipCodeDxRestart) {
 
-	Write-Host 'Data migration complete. Code Dx must be restarted at this time (run: docker-compose restart)'
+	Write-Host 'Data migration complete. Software Risk Manager must be restarted at this time (run: docker-compose restart)'
 	return
 }
 
-Write-Verbose 'Restarting Code Dx...'
+Write-Verbose 'Restarting Software Risk Manager...'
 Push-Location (join-path $PSScriptRoot '..')
 docker-compose restart
 if ($LASTEXITCODE -ne 0) {
-	throw 'Unable to restart Code Dx'
+	throw 'Unable to restart Software Risk Manager'
 }
 
 Write-Host 'Done'
