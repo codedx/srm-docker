@@ -60,7 +60,8 @@ The name of the backup to be stored in the Code Dx backup volume.
 If not specified, an auto generated backup name will be used following the format of "backup-{date}-{time}"
 
 .LINK
-https://github.com/codedx/codedx-docker#creating-a-backup
+https://github.com/codedx/srm-docker/blob/master/docs/DeploymentGuide.md#creating-a-backup
+
 
 #>
 

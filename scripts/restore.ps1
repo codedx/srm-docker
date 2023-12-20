@@ -45,7 +45,8 @@ The name of the desired backup to restore from in the Code Dx backup volume.
 If not specified, a listing of the current backups will be displayed along with a prompt for entering the name of one of those backups.
 
 .LINK
-https://github.com/codedx/codedx-docker#restoring-from-a-backup
+https://github.com/codedx/srm-docker/blob/master/docs/DeploymentGuide.md#creating-a-backup
+
 
 #>
 

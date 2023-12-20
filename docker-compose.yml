@@ -11,6 +11,10 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+#
+#   For details on configuring an Software Risk Manager, refer to this URL:
+#   https://github.com/codedx/srm-docker/blob/master/docs/DeploymentGuide.md#installation
+#
 version: '2'
 services:
     codedx-db:

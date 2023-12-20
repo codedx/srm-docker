@@ -12,15 +12,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-#   For details on configuring an external Code Dx database, refer to this URL:
-#   https://github.com/codedx/codedx-kubernetes/blob/master/setup/core/docs/db/use-external-database.md
+#   For details on configuring Software Risk Manager with an external database, refer to this URL:
+#   https://github.com/codedx/srm-docker/blob/master/docs/DeploymentGuide.md#installation
 #
 version: '2'
 services:
     codedx-tomcat:
         image: codedx/codedx-tomcat:v2023.12.0
         environment:
-            DB_URL: "jdbc:mysql://codedx-db/codedxdb?sessionVariables=sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
+            DB_URL: "jdbc:mysql://db-hostname/srmdb?sessionVariables=sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
             DB_DRIVER: "com.mysql.jdbc.Driver"
             DB_USER: "root"
             DB_PASSWORD: "root"
