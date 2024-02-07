@@ -23,6 +23,7 @@
   * [Installation - External Database](#installation---external-database)
 - [Customizing Software Risk Manager](#customizing-software-risk-manager)
   * [Custom Props](#custom-props)
+  * [Custom Context Path](#custom-context-path)
 - [Backup and Restore](#backup-and-restore)
   * [Prerequisites](#prerequisites-1)
     + [Windows Prerequisites](#windows-prerequisites)
@@ -34,6 +35,9 @@
 - [Upgrading](#upgrading)
   * [Running Software Risk Manager After Upgrade](#running-software-risk-manager-after-upgrade)
 - [Migrating from Software Risk Manager Installer to Docker Compose](#migrating-from-software-risk-manager-installer-to-docker-compose)
+  * [Prerequisites](#prerequisites-2)
+    + [Windows Prerequisites](#windows-prerequisites-1)
+  * [Migration - No External Database](#migration---no-external-database)
 - [Uninstall](#uninstall)
 
 <!-- tocstop -->
@@ -327,6 +331,22 @@ docker cp codedx.props codedx-docker_codedx-tomcat_1:/opt/codedx/codedx.props
 ```
 
 4. Restart the SRM web container by running the Docker Compose `down` and `up` commands you use for your deployment.
+
+## Custom Context Path
+
+By default, Software Risk Manager is accessible at `/srm`. For backward compatibility, requests to `/codedx/api` and `/codedx/x` will be rewritten to `/srm/api` and `/srm/x` respectively, and requests to `/codedx` will be redirected to `/srm`.
+
+You can change Software Risk Manager's context path by setting the SRM_CONTEXT_PATH environment variable in your Docker Compose file. The following example changes the default context path from `/srm` to `/myapps/srm`:
+
+```
+    codedx-tomcat:
+        image: ...
+        environment:
+            DB_URL: ...
+            SRM_CONTEXT_PATH: "/myapps/srm"
+```
+
+With the above configuration, you can access Software Risk Manager at `hostname/myapps/srm` after restarting Software Risk Manager.
 
 # Backup and Restore
 
