@@ -346,7 +346,7 @@ You can change Software Risk Manager's context path by setting the SRM_CONTEXT_P
             SRM_CONTEXT_PATH: "/myapps/srm"
 ```
 
-With the above configuration, you can access Software Risk Manager at `hostname/myapps/srm` after restarting Software Risk Manager.
+With the above configuration, you can access Software Risk Manager at `hostname/myapps/srm` after restarting Software Risk Manager. URL rewrites and redirects from `/codedx` get disabled when using a custom context path.
 
 # Backup and Restore
 
