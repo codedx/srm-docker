@@ -336,17 +336,17 @@ docker cp codedx.props codedx-docker_codedx-tomcat_1:/opt/codedx/codedx.props
 
 By default, Software Risk Manager is accessible at `/srm`. For backward compatibility, requests to `/codedx/api` and `/codedx/x` will be rewritten to `/srm/api` and `/srm/x` respectively, and requests to `/codedx` will be redirected to `/srm`.
 
-You can change Software Risk Manager's context path by setting the SRM_CONTEXT_PATH environment variable in your Docker Compose file. The following example changes the default context path from `/srm` to `/myapps/srm`:
+You can change Software Risk Manager's context path by setting the SRM_WEBAPP_NAME environment variable in your Docker Compose file. The following example changes the default context path from `/srm` to `/mysrm`:
 
 ```
     codedx-tomcat:
         image: ...
         environment:
             DB_URL: ...
-            SRM_CONTEXT_PATH: "/myapps/srm"
+            SRM_WEBAPP_NAME: "mysrm"
 ```
 
-With the above configuration, you can access Software Risk Manager at `hostname/myapps/srm` after restarting Software Risk Manager. URL rewrites and redirects from `/codedx` get disabled when using a custom context path.
+With the above configuration, you can access Software Risk Manager at `hostname/mysrm` after restarting Software Risk Manager. URL rewrites and redirects from `/codedx` get disabled when using a custom context path.
 
 # Backup and Restore
 
