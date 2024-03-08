@@ -481,7 +481,7 @@ Remove your Software Risk Manager container(s) before starting an upgrade (**Do 
 docker-compose -f /path/to/your-docker-compose-file down
 ```
 
-The preferred upgrade method is pulling the latest changes from GitHub. Edits to local files like your Docker Compose file may block your pull from GitHub, so use these commands to stash your changes and reapply them after your pull:
+The preferred upgrade method is pulling the latest changes from GitHub. The Docker Compose file is updated with each Software Risk Manager release to reference the latest Docker image versions. Edits to local files like your Docker Compose file may block your pull from GitHub, so use these commands to stash your changes and reapply them after your pull:
 
 ```
 cd /path/to/srm-docker
