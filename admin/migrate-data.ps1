@@ -100,35 +100,35 @@ if (-not $externalDatabase) {
 		throw 'Unable to drop database'
 	}
 
-	Write-Verbose "Creating database named $dbName..."
-	docker exec $dbContainerName mysql -uroot --password="$dbRootPwd" -e "CREATE DATABASE $dbName"
-	if ($LASTEXITCODE -ne 0) {
-		throw 'Unable to create database'
-	}
+    Write-Verbose "Creating database named $dbName..."
+    docker exec $dbContainerName mysql -uroot --password="$dbRootPwd" -e "CREATE DATABASE $dbName"
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to create database'
+    }
 
-	Write-Verbose 'Creating temporary directory...'
-	docker exec $dbContainerName mkdir -p /tmp/codedx
-	if ($LASTEXITCODE -ne 0) {
-		throw 'Unable to create directory'
-	}
+    Write-Verbose 'Creating temporary directory...'
+    docker exec $dbContainerName mkdir -p /tmp/codedx
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to create directory'
+    }
 
-	Write-Verbose 'Copying database dump file to container...'
-	docker cp $dbDumpFilePath $dbContainerName`:/tmp/codedx/dump-codedx.sql
-	if ($LASTEXITCODE -ne 0) {
-		throw 'Unable to copy dump file to directory'
-	}
+    Write-Verbose 'Copying database dump file to container...'
+    docker cp $dbDumpFilePath $dbContainerName`:/tmp/codedx/dump-codedx.sql
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to copy dump file to directory'
+    }
 
-	Write-Verbose 'Importing database dump file (may take a while)...'
-	docker exec $dbContainerName "bash" "-c" "mysql -uroot --password=""$dbRootPwd"" $dbName < /tmp/codedx/dump-codedx.sql"
-	if ($LASTEXITCODE -ne 0) {
-		throw 'Unable to import database dump file'
-	}
+    Write-Verbose 'Importing database dump file (may take a while)...'
+    docker exec $dbContainerName "bash" "-c" "mysql -uroot --password=""$dbRootPwd"" $dbName < /tmp/codedx/dump-codedx.sql"
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to import database dump file'
+    }
 
-	Write-Verbose 'Deleting database dump file...'
-	docker exec $dbContainerName rm -Rf /tmp/codedx
-	if ($LASTEXITCODE -ne 0) {
-		throw 'Unable to delete database dump file'
-	}
+    Write-Verbose 'Deleting database dump file...'
+    docker exec $dbContainerName rm -Rf /tmp/codedx
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Unable to delete database dump file'
+    }
 } else {
 	$externalDatabaseInstructions = @'
 
