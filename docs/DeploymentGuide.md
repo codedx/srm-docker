@@ -38,6 +38,7 @@
   * [Prerequisites](#prerequisites-2)
     + [Windows Prerequisites](#windows-prerequisites-1)
   * [Migration - No External Database](#migration---no-external-database)
+  * [Migration - External Database](#migration---external-database)
 - [Uninstall](#uninstall)
 
 <!-- tocstop -->
@@ -554,9 +555,9 @@ pwsh ./admin/migrate-data.ps1
 
 >Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker_codedx-tomcat_1), `-dbContainerName` (codedx-docker_codedx-db_1), and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
 
-   Your script output should look similar to this:
- 
-   ```
+Your script output should look similar to this:
+
+   ```plaintext
    pwsh ./admin/migrate-data.ps1
    Enter the path to your mysqldump file: /path/to/dump-srm.sql
    VERBOSE: Checking database dump file path...
@@ -572,6 +573,75 @@ pwsh ./admin/migrate-data.ps1
    VERBOSE: Copying database dump file to container...
    VERBOSE: Importing database dump file (may take a while)...
    VERBOSE: Deleting database dump file...
+   VERBOSE: Deleting directories...
+   VERBOSE: Deleting directory /opt/codedx/analysis-files...
+   VERBOSE: Deleting directory /opt/codedx/keystore...
+   VERBOSE: Deleting directory /opt/codedx/mltriage-files...
+   VERBOSE: Copying directories...
+   VERBOSE: Copying directory /path/to/codedx/analysis-files to /opt/codedx/analysis-files...
+   VERBOSE: Copying directory /path/to/codedx/mltriage-files to /opt/codedx/mltriage-files...
+   VERBOSE: Restarting Software Risk Manager...
+   Restarting codedx-docker_codedx-tomcat_1 ... done
+   Restarting codedx-docker_codedx-db_1     ... done
+   Done
+   ```
+
+
+## Migration - External Database
+
+The following steps cover migrating data from a Software Risk Manager system installed with the native installer to an existing Docker Compose deployment.
+
+1. Verify that your Software Risk Manager deployed with Docker Compose is running and using the `docker-compose-external-db.yml` file. The external database details will need to be added to this file.
+
+   From the root of the project, the `up` command should look like
+
+```
+docker-compose -f docker-compose-external-db.yml up
+```
+
+2. Verify that your Software Risk Manager deployed with the native installer is running.
+
+3. Verify that the version numbers of both systems match.
+
+4. Log on to your source Software Risk Manager server whose data you want to migrate.
+
+5. Run mysqldump to create a backup file. You can run the following command to create a dump-srm.sql file after specifying the parameters that work for your database.
+
+```
+mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql
+```
+>Note: The above command uses a database named codedx. Older versions of Software Risk Manager may use a database named bitnami_codedx.
+
+6. Return to the system running Software Risk Manager with Docker Compose, change directory to this repository (srm-docker folder), and run the migrate-data.ps1 script with the following commands. The script will guide you through the rest of the procedure.
+
+  ```
+  cd /path/to/srm-docker
+  pwsh ./admin/migrate-data.ps1 -externalDatabase
+  ```
+
+  >Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker_codedx-tomcat_1) and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
+
+  Your script output should look similar to this:
+
+   ```plaintext
+   pwsh ./admin/migrate-data.ps1
+   Enter the path to your Software Risk Manager AppData folder: /path/to/codedx
+   VERBOSE: Checking appdata path...
+   VERBOSE: Checking appdata/analysis-files path...
+   Enter a password for the MariaDB root user: **********
+   VERBOSE: Checking PATH prerequisites...
+   VERBOSE: Checking running containers...
+
+   Since your SRM deployment uses an external database (one that you maintain on your own
+   that is not installed or updated by the SRM deployment script), you must restore the dump-srm.sql file you
+   created in Step 5 of the Migrate SRM Data to Docker Compose instructions.
+
+   You can restore mysqldump files using a command that looks like this:
+
+    mysql -uroot -p srmdb < dump-srm.sql
+
+   Note: Replace 'root' and 'srmdb' as necessary.
+
    VERBOSE: Deleting directories...
    VERBOSE: Deleting directory /opt/codedx/analysis-files...
    VERBOSE: Deleting directory /opt/codedx/keystore...
