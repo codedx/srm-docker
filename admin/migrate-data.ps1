@@ -11,13 +11,14 @@ Software Risk Manager Installer to a Software Risk Manager deployment running wi
 #>
 
 param (
-		[string] $tomcatContainerName = 'codedx-docker_codedx-tomcat_1',
-		[string] $dbContainerName = 'codedx-docker_codedx-db_1',
+		[string] $tomcatContainerName = 'codedx-docker-codedx-tomcat-1',
+		[string] $dbContainerName = 'codedx-docker-codedx-db-1',
 		[string] $dbName = 'codedx',
 		[string] $dbDumpFilePath,
 		[string] $appDataPath,
 		[string] $dbRootPwd,
-		[switch] $skipCodeDxRestart
+		[switch] $skipCodeDxRestart,
+		[switch] $externalDatabase
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,13 +41,15 @@ function Test-AppCommandPath([string] $commandName) {
 	$command.Path
 }
 
-if ($dbDumpFilePath -eq '') {
-	$dbDumpFilePath = Read-Host 'Enter the path to your mysqldump file'
-}
+if (-not $externalDatabase) {
+	if ($dbDumpFilePath -eq '') {
+		$dbDumpFilePath = Read-Host 'Enter the path to your mysqldump file'
+	}
 
-Write-Verbose 'Checking database dump file path...'
-if (-not (Test-Path $dbDumpFilePath -PathType Leaf)) {
-	throw "Unable to find mysqldumpfile at $dbDumpFilePath."
+	Write-Verbose 'Checking database dump file path...'
+	if (-not (Test-Path $dbDumpFilePath -PathType Leaf)) {
+		throw "Unable to find mysqldumpfile at $dbDumpFilePath."
+	}
 }
 
 if ($appDataPath -eq '') { 
@@ -64,9 +67,11 @@ if (-not (Test-Path $analysisFiles -PathType Container)) {
 	throw "Unable to find Software Risk Manager AppData analysis-files folder at $analysisFiles."
 }
 
-if ($dbRootPwd -eq '') {
-	$bstr      = [Runtime.InteropServices.Marshal]::SecureStringToBSTR((Read-Host 'Enter a password for the MariaDB root user' -AsSecureString))
-	$dbRootPwd = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+if (-not $externalDatabase) {
+	if ($dbRootPwd -eq '') {
+		$bstr      = [Runtime.InteropServices.Marshal]::SecureStringToBSTR((Read-Host 'Enter the password for the docker MariaDB root user' -AsSecureString))
+		$dbRootPwd = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+	}
 }
 
 Write-Verbose 'Checking PATH prerequisites...'
@@ -78,54 +83,76 @@ Write-Verbose 'Checking PATH prerequisites...'
 }
 
 Write-Verbose 'Checking running containers...'
-$tomcatContainerName,$dbContainerName | ForEach-Object {
+
+$containersToCheck = @($tomcatContainerName)
+if (-not $externalDatabase) {
+	$containersToCheck += $dbContainerName
+}
+
+$containersToCheck | ForEach-Object {
 
 	if (-not (Test-RunningContainer $_)) {
 		throw "Unable to continue because a running container named $_ could not be found. Is Software Risk Manager running with Docker Compose and did you specify the correct script parameters (-tomcatContainerName and -dbContainerName)?"
 	}
 }
+if (-not $externalDatabase) {
+	Write-Verbose "Dropping database named $dbName..."
+	docker exec $dbContainerName mysql -uroot --password="$dbRootPwd" -e "DROP DATABASE IF EXISTS $dbName"
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to drop database'
+	}
 
-Write-Verbose "Dropping database named $dbName..."
-docker exec $dbContainerName mysql -uroot --password="$dbRootPwd" -e "DROP DATABASE IF EXISTS $dbName"
-if ($LASTEXITCODE -ne 0) {
-	throw 'Unable to drop database'
-}
+	Write-Verbose "Creating database named $dbName..."
+	docker exec $dbContainerName mysql -uroot --password="$dbRootPwd" -e "CREATE DATABASE $dbName"
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to create database'
+	}
 
-Write-Verbose "Creating database named $dbName..."
-docker exec $dbContainerName mysql -uroot --password="$dbRootPwd" -e "CREATE DATABASE $dbName"
-if ($LASTEXITCODE -ne 0) {
-	throw 'Unable to create database'
-}
+	Write-Verbose 'Creating temporary directory...'
+	docker exec $dbContainerName mkdir -p /tmp/srm
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to create directory'
+	}
 
-Write-Verbose 'Creating temporary directory...'
-docker exec $dbContainerName mkdir -p /tmp/codedx
-if ($LASTEXITCODE -ne 0) {
-	throw 'Unable to create directory'
-}
+	Write-Verbose 'Copying database dump file to container...'
+	docker cp $dbDumpFilePath $dbContainerName`:/tmp/srm/dump-srm.sql
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to copy dump file to directory'
+	}
 
-Write-Verbose 'Copying database dump file to container...'
-docker cp $dbDumpFilePath $dbContainerName`:/tmp/codedx/dump-codedx.sql
-if ($LASTEXITCODE -ne 0) {
-	throw 'Unable to copy dump file to directory'
-}
+	Write-Verbose 'Importing database dump file (may take a while)...'
+	docker exec $dbContainerName "bash" "-c" "mysql -uroot --password=""$dbRootPwd"" $dbName < /tmp/srm/dump-srm.sql"
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to import database dump file'
+	}
 
-Write-Verbose 'Importing database dump file (may take a while)...'
-docker exec $dbContainerName "bash" "-c" "mysql -uroot --password=""$dbRootPwd"" $dbName < /tmp/codedx/dump-codedx.sql"
-if ($LASTEXITCODE -ne 0) {
-	throw 'Unable to import database dump file'
-}
+	Write-Verbose 'Deleting database dump file...'
+	docker exec $dbContainerName rm -Rf /tmp/srm
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to delete database dump file'
+	}
+} else {
+	$externalDatabaseInstructions = @'
 
-Write-Verbose 'Deleting database dump file...'
-docker exec $dbContainerName rm -Rf /tmp/codedx
-if ($LASTEXITCODE -ne 0) {
-	throw 'Unable to delete database dump file'
+Since your SRM deployment uses an external database (one that you maintain on your own
+that is not installed or updated by the SRM deployment script), you must restore the dump-srm.sql file you
+created in Step 5 of the Migrate SRM Data to Docker Compose instructions.
+
+You can restore mysqldump files using a command that looks like this:
+
+  mysql -uroot -p srmdb < dump-srm.sql
+
+Note: Replace 'root' and 'srmdb' as necessary.
+'@
+	Write-Host $externalDatabaseInstructions
+	Read-Host -Prompt 'Restore your database (see above) and then press Enter to continue...'
 }
 
 Write-Verbose 'Deleting directories...'
 '/opt/codedx/analysis-files','/opt/codedx/keystore','/opt/codedx/mltriage-files' | ForEach-Object {
 
 	Write-Verbose "Deleting directory $_..."
-	docker exec $dbContainerName "bash" "-c" "if test -d $_; then rm -Rf $_; fi"
+	docker exec $tomcatContainerName "bash" "-c" "if test -d $_; then rm -Rf $_; fi"
 	if ($LASTEXITCODE -ne 0) {
 		throw "Unable to delete directory $_"
 	}
