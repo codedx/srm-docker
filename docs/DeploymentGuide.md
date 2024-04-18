@@ -542,7 +542,7 @@ The following steps cover migrating data from a Software Risk Manager system ins
 5. Run mysqldump to create a backup file. You can run the following command to create a dump-srm.sql file after specifying the parameters that work for your database.
 
 ```
-pwsh -c "mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql"
+mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx -r dump-srm.sql
 ```
 >Note: The above command uses a database named codedx. Older versions of Software Risk Manager may use a database named bitnami_codedx.
 
@@ -612,7 +612,7 @@ docker-compose -f docker-compose-external-db.yml up
 5. Run mysqldump to create a backup file. You can run the following command to create a dump-srm.sql file after specifying the parameters that work for your database.
 
 ```
-pwsh -c "mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql"
+mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx -r dump-srm.sql
 ```
 >Note: The above command uses a database named codedx. Older versions of Software Risk Manager may use a database named bitnami_codedx.
 
