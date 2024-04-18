@@ -67,9 +67,11 @@ if (-not (Test-Path $analysisFiles -PathType Container)) {
 	throw "Unable to find Software Risk Manager AppData analysis-files folder at $analysisFiles."
 }
 
-if ($dbRootPwd -eq '') {
-	$bstr      = [Runtime.InteropServices.Marshal]::SecureStringToBSTR((Read-Host 'Enter the password for the docker MariaDB root user' -AsSecureString))
-	$dbRootPwd = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+if (-not $externalDatabase) {
+	if ($dbRootPwd -eq '') {
+		$bstr      = [Runtime.InteropServices.Marshal]::SecureStringToBSTR((Read-Host 'Enter the password for the docker MariaDB root user' -AsSecureString))
+		$dbRootPwd = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+	}
 }
 
 Write-Verbose 'Checking PATH prerequisites...'
@@ -100,35 +102,35 @@ if (-not $externalDatabase) {
 		throw 'Unable to drop database'
 	}
 
-    Write-Verbose "Creating database named $dbName..."
-    docker exec $dbContainerName mysql -uroot --password="$dbRootPwd" -e "CREATE DATABASE $dbName"
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Unable to create database'
-    }
+	Write-Verbose "Creating database named $dbName..."
+	docker exec $dbContainerName mysql -uroot --password="$dbRootPwd" -e "CREATE DATABASE $dbName"
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to create database'
+	}
 
-    Write-Verbose 'Creating temporary directory...'
-    docker exec $dbContainerName mkdir -p /tmp/srm
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Unable to create directory'
-    }
+	Write-Verbose 'Creating temporary directory...'
+	docker exec $dbContainerName mkdir -p /tmp/srm
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to create directory'
+	}
 
-    Write-Verbose 'Copying database dump file to container...'
-    docker cp $dbDumpFilePath $dbContainerName`:/tmp/srm/dump-srm.sql
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Unable to copy dump file to directory'
-    }
+	Write-Verbose 'Copying database dump file to container...'
+	docker cp $dbDumpFilePath $dbContainerName`:/tmp/srm/dump-srm.sql
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to copy dump file to directory'
+	}
 
-    Write-Verbose 'Importing database dump file (may take a while)...'
-    docker exec $dbContainerName "bash" "-c" "mysql -uroot --password=""$dbRootPwd"" $dbName < /tmp/srm/dump-srm.sql"
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Unable to import database dump file'
-    }
+	Write-Verbose 'Importing database dump file (may take a while)...'
+	docker exec $dbContainerName "bash" "-c" "mysql -uroot --password=""$dbRootPwd"" $dbName < /tmp/srm/dump-srm.sql"
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to import database dump file'
+	}
 
-    Write-Verbose 'Deleting database dump file...'
-    docker exec $dbContainerName rm -Rf /tmp/srm
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Unable to delete database dump file'
-    }
+	Write-Verbose 'Deleting database dump file...'
+	docker exec $dbContainerName rm -Rf /tmp/srm
+	if ($LASTEXITCODE -ne 0) {
+		throw 'Unable to delete database dump file'
+	}
 } else {
 	$externalDatabaseInstructions = @'
 
@@ -149,11 +151,11 @@ Note: Replace 'root' and 'srmdb' as necessary.
 Write-Verbose 'Deleting directories...'
 '/opt/codedx/analysis-files','/opt/codedx/keystore','/opt/codedx/mltriage-files' | ForEach-Object {
 
-    Write-Verbose "Deleting directory $_..."
-    docker exec $tomcatContainerName "bash" "-c" "if test -d $_; then rm -Rf $_; fi"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Unable to delete directory $_"
-    }
+	Write-Verbose "Deleting directory $_..."
+	docker exec $tomcatContainerName "bash" "-c" "if test -d $_; then rm -Rf $_; fi"
+	if ($LASTEXITCODE -ne 0) {
+		throw "Unable to delete directory $_"
+	}
 }
 
 Write-Verbose 'Copying directories...'
