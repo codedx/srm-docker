@@ -521,6 +521,8 @@ Here are the steps to migrate your data from a system created by the Software Ri
 
 The Software Risk Manager migration script depends on [PowerShell Core](https://github.com/PowerShell/PowerShell#get-powershell), which can be installed on macOS, Linux, and Windows.
 
+The target system you're migrating data to should have already gone through the installation process.
+
 ### Windows Prerequisites
 
 Ensure you can run PowerShell Core scripts on Windows by switching your PowerShell Execution Policy to RemoteSigned (recommended) or Unrestricted. You must run the Set-ExecutionPolicy -ExecutionPolicy RemoteSigned command from an elevated/administrator Command Prompt.
