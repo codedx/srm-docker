@@ -136,6 +136,8 @@ Software Risk Manager includes a MariaDB database that requires no configuration
 
 If you prefer an external database, the web workload supports MariaDB version 10.6.x and MySQL version 8.0.x. Complete the following pre-work before installing Software Risk Manager with an external web database.
 
+Your MariaDB/MySQL database must be on port 3306.
+
 Your MariaDB/MySQL database must include the following variable configuration.
 
 - optimizer_search_depth=0
@@ -538,7 +540,7 @@ The following steps cover migrating data from a Software Risk Manager system ins
 5. Run mysqldump to create a backup file. You can run the following command to create a dump-srm.sql file after specifying the parameters that work for your database.
 
 ```
-mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql
+pwsh -c "mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql"
 ```
 >Note: The above command uses a database named codedx. Older versions of Software Risk Manager may use a database named bitnami_codedx.
 
@@ -553,7 +555,7 @@ cd /path/to/srm-docker
 pwsh ./admin/migrate-data.ps1
 ```
 
->Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker_codedx-tomcat_1), `-dbContainerName` (codedx-docker_codedx-db_1), and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
+>Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker-codedx-tomcat-1), `-dbContainerName` (codedx-docker-codedx-db-1), and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
 
 Your script output should look similar to this:
 
@@ -564,7 +566,7 @@ Your script output should look similar to this:
    Enter the path to your Software Risk Manager AppData folder: /path/to/codedx
    VERBOSE: Checking appdata path...
    VERBOSE: Checking appdata/analysis-files path...
-   Enter a password for the MariaDB root user: **********
+   Enter the password for the docker MariaDB root user: **********
    VERBOSE: Checking PATH prerequisites...
    VERBOSE: Checking running containers...
    VERBOSE: Dropping database named codedx...
@@ -581,8 +583,8 @@ Your script output should look similar to this:
    VERBOSE: Copying directory /path/to/codedx/analysis-files to /opt/codedx/analysis-files...
    VERBOSE: Copying directory /path/to/codedx/mltriage-files to /opt/codedx/mltriage-files...
    VERBOSE: Restarting Software Risk Manager...
-   Restarting codedx-docker_codedx-tomcat_1 ... done
-   Restarting codedx-docker_codedx-db_1     ... done
+   Restarting codedx-docker-codedx-tomcat-1 ... done
+   Restarting codedx-docker-codedx-db-1     ... done
    Done
    ```
 
@@ -608,7 +610,7 @@ docker-compose -f docker-compose-external-db.yml up
 5. Run mysqldump to create a backup file. You can run the following command to create a dump-srm.sql file after specifying the parameters that work for your database.
 
 ```
-mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql
+pwsh -c "mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql"
 ```
 >Note: The above command uses a database named codedx. Older versions of Software Risk Manager may use a database named bitnami_codedx.
 
@@ -619,22 +621,22 @@ mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql
   pwsh ./admin/migrate-data.ps1 -externalDatabase
   ```
 
-  >Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker_codedx-tomcat_1) and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
+  >Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker-codedx-tomcat-1) and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
 
   Your script output should look similar to this:
 
    ```plaintext
-   pwsh ./admin/migrate-data.ps1
+   pwsh ./admin/migrate-data.ps1 -externalDatabase
    Enter the path to your Software Risk Manager AppData folder: /path/to/codedx
    VERBOSE: Checking appdata path...
    VERBOSE: Checking appdata/analysis-files path...
-   Enter a password for the MariaDB root user: **********
+   Enter the password for the docker MariaDB root user: **********
    VERBOSE: Checking PATH prerequisites...
    VERBOSE: Checking running containers...
 
    Since your SRM deployment uses an external database (one that you maintain on your own
    that is not installed or updated by the SRM deployment script), you must restore the dump-srm.sql file you
-   created in Step 5 of the Migrate SRM Data to Docker Compose instructions.
+   created in Step 5 of the migration instructions.
 
    You can restore mysqldump files using a command that looks like this:
 
@@ -650,8 +652,7 @@ mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx > dump-srm.sql
    VERBOSE: Copying directory /path/to/codedx/analysis-files to /opt/codedx/analysis-files...
    VERBOSE: Copying directory /path/to/codedx/mltriage-files to /opt/codedx/mltriage-files...
    VERBOSE: Restarting Software Risk Manager...
-   Restarting codedx-docker_codedx-tomcat_1 ... done
-   Restarting codedx-docker_codedx-db_1     ... done
+   Restarting codedx-docker-codedx-tomcat-1 ... done
    Done
    ```
 
