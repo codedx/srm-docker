@@ -546,11 +546,17 @@ mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx -r dump-srm.sql
 ```
 >Note: The above command uses a database named codedx. Older versions of Software Risk Manager may use a database named bitnami_codedx.
 
-6. Locate the directory path for your Software Risk Manager AppData directory (e.g., /path/to/codedx_data/codedx_appdata). The AppData directory contains your analysis-files and log-files directories.
+6. You may encounter an issue running SRM if the database dump file makes use of `DEFINER`. Run the following command with `dump-srm.sql` replaced with the path of your database dump file. This will overwrite the existing database dump file with the definers removed.
 
-7. Copy your database dump file and Software Risk Manager AppData directory to the system running Software Risk Manager with Docker Compose.
+```powershell
+(Get-Content "dump-srm.sql") -replace '\sDEFINER=`[^`]*`@`[^`]*`','' | Out-File dump-srm.sql
+```
 
-8. Return to the system running Software Risk Manager with Docker Compose, change directory to this repository (srm-docker folder), and run the migrate-data.ps1 script with the following commands. When prompted, enter the path to your dump-srm.sql file, your Software Risk Manager AppData directory, and specify the password for the Docker Compose root database user.
+7. Locate the directory path for your Software Risk Manager AppData directory (e.g., /path/to/codedx_data/codedx_appdata). The AppData directory contains your analysis-files and log-files directories.
+
+8. Copy your database dump file and Software Risk Manager AppData directory to the system running Software Risk Manager with Docker Compose.
+
+9. Return to the system running Software Risk Manager with Docker Compose, change directory to this repository (srm-docker folder), and run the migrate-data.ps1 script with the following commands. When prompted, enter the path to your dump-srm.sql file, your Software Risk Manager AppData directory, and specify the password for the Docker Compose root database user.
 
 ```
 cd /path/to/srm-docker
@@ -616,7 +622,13 @@ mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx -r dump-srm.sql
 ```
 >Note: The above command uses a database named codedx. Older versions of Software Risk Manager may use a database named bitnami_codedx.
 
-6. Return to the system running Software Risk Manager with Docker Compose, change directory to this repository (srm-docker folder), and run the migrate-data.ps1 script with the following commands. The script will guide you through the rest of the procedure.
+6. You may encounter an issue running SRM if the database dump file makes use of `DEFINER`. Run the following command with `dump-srm.sql` replaced with the path of your database dump file. This will overwrite the existing database dump file with the definers removed.
+
+```powershell
+(Get-Content "dump-srm.sql") -replace '\sDEFINER=`[^`]*`@`[^`]*`','' | Out-File dump-srm.sql
+```
+
+7. Return to the system running Software Risk Manager with Docker Compose, change directory to this repository (srm-docker folder), and run the migrate-data.ps1 script with the following commands. The script will guide you through the rest of the procedure.
 
   ```
   cd /path/to/srm-docker
