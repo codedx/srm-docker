@@ -563,7 +563,7 @@ cd /path/to/srm-docker
 pwsh ./admin/migrate-data.ps1
 ```
 
->Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker-codedx-tomcat-1), `-dbContainerName` (codedx-docker-codedx-db-1), and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
+>Note: The above command will use the default values for the script parameters `-tomcatContainerName` (srm-docker-codedx-tomcat-1), `-dbContainerName` (srm-docker-codedx-db-1), and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
 
 Your script output should look similar to this:
 

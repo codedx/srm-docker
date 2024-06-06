@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 1.1.0
+.VERSION 1.2.0
 .GUID a56b7e15-a300-4da7-85b6-8c3bdff8d897
 .AUTHOR Software Risk Manager
 #>
@@ -11,8 +11,8 @@ Software Risk Manager Installer to a Software Risk Manager deployment running wi
 #>
 
 param (
-		[string] $tomcatContainerName = 'codedx-docker-codedx-tomcat-1',
-		[string] $dbContainerName = 'codedx-docker-codedx-db-1',
+		[string] $tomcatContainerName = 'srm-docker-codedx-tomcat-1',
+		[string] $dbContainerName = 'srm-docker-codedx-db-1',
 		[string] $dbName = 'codedx',
 		[string] $dbDumpFilePath,
 		[string] $appDataPath,
