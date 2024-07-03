@@ -295,11 +295,11 @@ You will use the docker-compose.yml file to install Software Risk Manager withou
     docker-compose -f ./docker-compose-external-db.yml up -d
     ```
 
-    You can run the following commands to view Software Risk Manager log data (assumes a codedx-docker_codedx-tomcat_1 container name):
+    You can run the following commands to view Software Risk Manager log data (assumes a srm-docker-codedx-tomcat-1 container name):
 
-    docker exec codedx-docker_codedx-tomcat_1 tail -f /opt/codedx/log-files/codedx.log
+    docker exec srm-docker-codedx-tomcat-1 tail -f /opt/codedx/log-files/codedx.log
 
-    docker logs codedx-docker_codedx-tomcat_1
+    docker logs srm-docker-codedx-tomcat-1
 
 >Note: If you want to migrate data from an existing Software Risk Manager system, refer to [these instructions](#migrating-from-software-risk-manager-installer-to-docker-compose).
 
@@ -315,10 +315,10 @@ For example, to automatically sign a user out after 15 minutes of inactivity (20
 
 Here's how this can be done in a Docker Compose install:
 
-1. With Software Risk Manager up and running, copy its codedx.props file to your current working directory using the following `docker cp` command, replacing the codedx-docker_codedx-tomcat_1 Docker container name as necessary (you can list running Docker containers with `docker ps`):
+1. With Software Risk Manager up and running, copy its codedx.props file to your current working directory using the following `docker cp` command, replacing the srm-docker-codedx-tomcat-1 Docker container name as necessary (you can list running Docker containers with `docker ps`):
 
 ```
-docker cp codedx-docker_codedx-tomcat_1:/opt/codedx/codedx.props .
+docker cp srm-docker-codedx-tomcat-1:/opt/codedx/codedx.props .
 ```
 
 2. Edit your local codedx.props by appending the following line:
@@ -327,10 +327,10 @@ docker cp codedx-docker_codedx-tomcat_1:/opt/codedx/codedx.props .
 session.lifetime = 15 minutes
 ```
 
-3. Copy codedx.props back to its original location, replacing the codedx-docker_codedx-tomcat_1 Docker container name as necessary:
+3. Copy codedx.props back to its original location, replacing the srm-docker-codedx-tomcat-1 Docker container name as necessary:
 
 ```
-docker cp codedx.props codedx-docker_codedx-tomcat_1:/opt/codedx/codedx.props
+docker cp codedx.props srm-docker-codedx-tomcat-1:/opt/codedx/codedx.props
 ```
 
 4. Restart the SRM web container by running the Docker Compose `down` and `up` commands you use for your deployment.
@@ -418,7 +418,7 @@ cd /path/to/srm-docker
 3. Run the backup.ps1 script by specifying a backup name (e.g., my-srm-backup), the path to your Docker Compose file, and the name of your web volume (you can list volumes with the `docker volume ls` command)
 
 ```
-pwsh ./scripts/backup.ps1 -BackupName my-srm-backup -AppDataVol codedx-docker_codedx-appdata-ex-db-volume -ComposeConfigPath /path/to/your-docker-compose-file 
+pwsh ./scripts/backup.ps1 -BackupName my-srm-backup -AppDataVol srm-docker_codedx-appdata-ex-db-volume -ComposeConfigPath /path/to/your-docker-compose-file 
 ```
 
 >Note: Specify a project name using the `-p` parameter, if necessary.
@@ -591,8 +591,8 @@ Your script output should look similar to this:
    VERBOSE: Copying directory /path/to/codedx/analysis-files to /opt/codedx/analysis-files...
    VERBOSE: Copying directory /path/to/codedx/mltriage-files to /opt/codedx/mltriage-files...
    VERBOSE: Restarting Software Risk Manager...
-   Restarting codedx-docker-codedx-tomcat-1 ... done
-   Restarting codedx-docker-codedx-db-1     ... done
+   Restarting srm-docker-codedx-tomcat-1 ... done
+   Restarting srm-docker-codedx-db-1     ... done
    Done
    ```
 
@@ -635,7 +635,7 @@ mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx -r dump-srm.sql
   pwsh ./admin/migrate-data.ps1 -externalDatabase
   ```
 
-  >Note: The above command will use the default values for the script parameters `-tomcatContainerName` (codedx-docker-codedx-tomcat-1) and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
+  >Note: The above command will use the default values for the script parameters `-tomcatContainerName` (srm-docker-codedx-tomcat-1) and `dbName` (codedx). You can find your Docker container names by running `docker ps`.
 
   Your script output should look similar to this:
 
@@ -665,7 +665,7 @@ mysqldump --host=127.0.0.1 --port=3306 --user=root -p codedx -r dump-srm.sql
    VERBOSE: Copying directory /path/to/codedx/analysis-files to /opt/codedx/analysis-files...
    VERBOSE: Copying directory /path/to/codedx/mltriage-files to /opt/codedx/mltriage-files...
    VERBOSE: Restarting Software Risk Manager...
-   Restarting codedx-docker-codedx-tomcat-1 ... done
+   Restarting srm-docker-codedx-tomcat-1 ... done
    Done
    ```
 
