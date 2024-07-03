@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 1.0.0
+.VERSION 1.1.0
 .GUID 5eadc648-e218-48d9-b264-f96f01f81434
 .AUTHOR Code Dx
 #>
@@ -67,7 +67,7 @@ https://github.com/codedx/srm-docker/blob/master/docs/DeploymentGuide.md#creatin
 
 param (
         [Alias('p')]
-        [string] $ProjectName = 'codedx-docker',
+        [string] $ProjectName = 'srm-docker',
         [string] $AppDataVolumeName = "$ProjectName`_codedx-appdata-volume",
         [string] $DbDataVolumeName = "$ProjectName`_codedx-database-volume",
         [string] $CodeDxTomcatServiceName = "codedx-tomcat",
