@@ -263,9 +263,9 @@ You will use the docker-compose.yml file to install Software Risk Manager withou
 
 1. Select a password for the Software Risk Manager admin user. Edit your `docker-compose-external-db.yml` file by specifying the password for the SUPERUSER_PASSWORD parameter.
 
-1. Edit the docker-compose-external-db.yml file by appending `&useSSL=true&requireSSL=true` to the DB_URL parameter.
+2. If you created your srm database user with the 'REQUIRE SSL' parameter, edit the docker-compose-external-db.yml file by appending `&useSSL=true&requireSSL=true` to the DB_URL parameter.
 
-2. Edit the docker-compose-external-db.yml file:
+3. Edit the docker-compose-external-db.yml file:
 
     a. Enter the database username for the DB_USER parameter
 
@@ -287,9 +287,9 @@ You will use the docker-compose.yml file to install Software Risk Manager withou
     "jdbc:mysql://db-hostname/srmdb?sessionVariables=sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'&useSSL=true&requireSSL=true"
     ```
 
-3. Follow the [HTTPS](#https) instructions if your deployment requires TLS/SSL.
+4. Follow the [HTTPS](#https) instructions if your deployment requires TLS/SSL.
 
-4. Start Software Risk Manager with the following command:
+5. Start Software Risk Manager with the following command:
 
     ```
     docker-compose -f ./docker-compose-external-db.yml up -d
