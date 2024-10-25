@@ -1,7 +1,8 @@
 <#PSScriptInfo
 .VERSION 1.2.0
 .GUID a56b7e15-a300-4da7-85b6-8c3bdff8d897
-.AUTHOR Software Risk Manager
+.AUTHOR Black Duck
+.COPYRIGHT Copyright 2024 Black Duck Software, Inc. All rights reserved.
 #>
 
 <#

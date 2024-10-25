@@ -309,7 +309,7 @@ You can change Software Risk Manager's behavior by specifying Software Risk Mana
 
 ## Custom Props
 
-Software Risk Manager's features can be customized through the configuration file `codedx.props` which, by default, is located in your Tomcat container at `/opt/codedx`. A full list of configuration parameters and how to change them can be found at [Install Guide](https://sig-product-docs.synopsys.com/bundle/srm/page/install_guide/Installation/overview.html).
+Software Risk Manager's features can be customized through the configuration file `codedx.props` which, by default, is located in your Tomcat container at `/opt/codedx`. A full list of configuration parameters and how to change them can be found at [Install Guide](https://documentation.blackduck.com/bundle/srm/page/install_guide/Installation/overview.html).
 
 For example, to automatically sign a user out after 15 minutes of inactivity (20 minutes by default), set `session.lifetime` to `15 minutes`.
 
