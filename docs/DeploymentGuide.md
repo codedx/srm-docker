@@ -167,7 +167,7 @@ Refer to the Web Database Workload Requirements section for database instance co
    GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, CREATE TEMPORARY TABLES, ALTER, REFERENCES, INDEX, DROP, TRIGGER ON srmdb.* to 'srm'@'%';
    FLUSH PRIVILEGES;
 
-4. If your database configuration requires Software Risk Manager to trust a certificate (e.g., the [Amazon RDS root certificate](https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem)), follow the [Trust Certificates](#trust-certificates) instructions to trust your database certificate and update the volumes section of your docker-compose-external-db.yml file.
+4. If your database configuration requires Software Risk Manager to trust a certificate (e.g., the [Amazon RDS root certificate](https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem)), follow the [Trust Certificates Pre-work](#trust-certificates-pre-work) instructions to trust your database certificate and update the volumes section of your docker-compose-external-db.yml file.
 
 ## Trust Certificates Pre-work
 
