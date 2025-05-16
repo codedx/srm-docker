@@ -18,7 +18,7 @@
 version: '2'
 services:
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v2025.3.6
+        image: codedx/codedx-tomcat:v2025.3.7
         environment:
             DB_URL: "jdbc:mysql://db-hostname/srmdb?sessionVariables=sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
             DB_DRIVER: "com.mysql.jdbc.Driver"
