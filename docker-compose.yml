@@ -26,7 +26,7 @@ services:
         volumes:
             - codedx-database-volume:/bitnami/mariadb
     codedx-tomcat:
-        image: codedx/codedx-tomcat:v2025.9.4
+        image: codedx/codedx-tomcat:v2025.9.5
         environment:
             DB_URL: "jdbc:mysql://codedx-db/codedx?sessionVariables=sql_mode='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
             DB_DRIVER: "com.mysql.jdbc.Driver"
