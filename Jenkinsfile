@@ -130,7 +130,7 @@ pipeline {
 									}
 
 									codeDxVersion             = currentVersions[0]
-									mariaDBVersion            = currentVersions[1]
+									mariaDBVersion            = 'v1.38.0' // currentVersions[1]
 
 									def isCurrentVersion = sh(returnStdout: true, script: "pwsh -command \"&{ . ./.version/common.ps1; Test-CodeDxVersion './docker-compose.yml' '$codeDxVersion' '$mariaDBVersion' }\"")
 
