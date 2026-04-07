@@ -15,16 +15,29 @@
 #   For details on configuring an Software Risk Manager, refer to this URL:
 #   https://github.com/codedx/srm-docker/blob/master/docs/DeploymentGuide.md#installation
 #
-version: '2'
 services:
+    codedx-db-init:
+        image: busybox
+        user: "0:0"
+        command: ["sh", "-c", "chown -R 1001:1001 /mariadb"]
+        volumes:
+            - codedx-database-volume:/mariadb
     codedx-db:
-        image: codedx/codedx-mariadb:v1.38.0
+        image: codedx/codedx-mariadb:v1.41.0
+        command:
+            - --optimizer_search_depth=0
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_general_ci
+            - --lower_case_table_names=1
+            - --datadir=/mariadb/data
         environment:
             MARIADB_ROOT_PASSWORD: "root"
             MARIADB_DATABASE: "codedx" # a password with a single quote is unsupported
-            MARIADB_EXTRA_FLAGS: "--optimizer_search_depth=0 --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --lower_case_table_names=1"
         volumes:
-            - codedx-database-volume:/bitnami/mariadb
+            - codedx-database-volume:/mariadb
+        depends_on:
+            codedx-db-init:
+                condition: service_completed_successfully
     codedx-tomcat:
         image: codedx/codedx-tomcat:v2026.3.3
         environment:
