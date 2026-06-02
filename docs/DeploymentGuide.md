@@ -47,7 +47,7 @@
 
 The footprint of your Software Risk Manager Docker Compose deployment depends on whether you plan to use an external database.
 
-The Software Risk Manager web application requires a MariaDB (version 10.6.x) or a MySQL (version 8.0.x) database instance. You can provide a database instance or use what's included in the default Compose file. An external database can be a standalone instance or one managed on your behalf by a cloud provider like AWS or Azure. 
+The Software Risk Manager web application requires a MariaDB (version 10.6.x) or a MySQL (version 8.4.x) database instance. You can provide a database instance or use what's included in the default Compose file. An external database can be a standalone instance or one managed on your behalf by a cloud provider like AWS or Azure. 
 
 A deployment using an external database consists of one Software Risk Manager Docker container for the web application that depends on a Docker volume.
 
