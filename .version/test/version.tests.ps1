@@ -44,8 +44,8 @@ Describe 'version.ps1' {
 			}
 		}
 
-		Should -Invoke -CommandName 'Get-Content' -Exactly 4
-		Should -Invoke -CommandName 'Set-Content' -Exactly 4
+		Should -Invoke Get-Content -Exactly -Times 4
+		Should -Invoke Set-Content -Exactly -Times 4
 	}
 
 	It 'matched version is a no-op' {
@@ -75,8 +75,8 @@ Describe 'version.ps1' {
 			}
 		}
 
-		Should -Invoke -CommandName 'Get-Content' -Exactly 4
-		Should -Invoke -CommandName 'Set-Content' -Exactly 4
+		Should -Invoke Get-Content -Exactly -Times 4
+		Should -Invoke Set-Content -Exactly -Times 4
 	}
 
 	BeforeEach {
